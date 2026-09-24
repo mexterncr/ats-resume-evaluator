@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillSync AI — ATS Intelligence & Resume Screener</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
+
+  <!-- Fixed Top Navbar with Working Anchors -->
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <a href="#home" class="flex items-center space-x-3 cursor-pointer">
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-500/30">⚡</div>
+        <span class="font-extrabold text-xl tracking-tight text-slate-900">SkillSync<span class="text-blue-600">.ai</span></span>
+      </a>
+      <div class="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600">
+        <a href="#analyzer" class="hover:text-blue-600 transition">Resume Analyzer</a>
+        <a href="#features" class="hover:text-blue-600 transition">Platform Features</a>
+        <a href="#workflow" class="hover:text-blue-600 transition">How It Works</a>
+        <a href="#about" class="hover:text-blue-600 transition">NLP Architecture</a>
+      </div>
+      <div>
+        <a href="#analyzer" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">Launch Evaluator</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header id="home" class="pt-16 pb-12 bg-gradient-to-b from-white via-slate-50 to-slate-100 border-b border-slate-200">
+    <div class="max-w-5xl mx-auto px-6 text-center">
+      <div class="inline-flex items-center space-x-2 bg-blue-50 border border-blue-200 text-blue-700 px-3.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-6">
+        <span>Third Year CS Mini-Project</span> • <span>NLP Vector Engine Active</span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        Analyze Your Resume. <br><span class="text-blue-600">Maximize Your ATS Match Rate.</span>
+      </h1>
+      <p class="mt-4 text-slate-600 max-w-2xl mx-auto text-base sm:text-lg">
+        Automated Resume Screening System driven by Natural Language Processing, TF-IDF Vector Space Modeling, and Multi-Criteria ATS Scoring.
+      </p>
+      <div class="mt-8 flex justify-center gap-4">
+        <a href="#analyzer" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition">Analyze My Resume</a>
+        <a href="#workflow" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold px-6 py-3 rounded-xl transition">How It Works</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Analyzer Workspace -->
+  <main id="analyzer" class="max-w-6xl mx-auto px-6 py-12 flex-1 w-full">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 p-6 sm:p-8">
+      
+      <div class="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">ATS Evaluation Workspace</h2>
+          <p class="text-xs text-slate-500 mt-1">Upload candidate resume (PDF) and target Job Description for mathematical vector parsing.</p>
+        </div>
+        <button id="demoBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg transition border border-slate-300 flex items-center gap-1.5">
+          <span>⚡</span> Preload Demo Data
+        </button>
+      </div>
+
+      <form id="evalForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">1. Target Job Description</label>
+          <textarea id="jdInput" rows="9" class="w-full border border-slate-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder-slate-400 bg-slate-50/50" placeholder="Paste the technical job description here..."></textarea>
+          <div class="flex justify-between text-xs text-slate-400 mt-1 px-1">
+            <span id="jdWordCount">0 words</span>
+            <span>Required for TF-IDF Vectorization</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">2. Upload Candidate Resume (PDF)</label>
+          <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer bg-slate-50/50 flex flex-col justify-center items-center h-[216px]" onclick="document.getElementById('resumeFile').click()">
+            <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3">📄</div>
+            <p class="text-sm font-semibold text-slate-700" id="fileText">Click to browse or drop PDF resume</p>
+            <p class="text-xs text-slate-400 mt-1">Accepts standard PDF documents up to 5 MB</p>
+            <input type="file" id="resumeFile" class="hidden" accept=".pdf">
+          </div>
+          <p class="text-xs text-slate-400 mt-2 px-1">Parsed using PyPDF text extraction stream</p>
+        </div>
+
+        <div class="md:col-span-2 pt-2">
+          <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-500/25 transition">
+            🚀 Run Comprehensive ATS Evaluation
+          </button>
+        </div>
+      </form>
+
+      <!-- Results Dashboard Panel -->
+      <div id="resultsCard" class="hidden mt-10 pt-8 border-t border-slate-200">
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Evaluation Report</span>
+            <h3 class="text-2xl font-extrabold text-slate-900" id="resFilename">Report</h3>
+            <p class="text-xs text-slate-500" id="resTime"></p>
+          </div>
+          <button onclick="window.print()" class="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-semibold px-3 py-2 rounded-lg">
+            🖨️ Print Report
+          </button>
+        </div>
+
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-4 text-center">
+            <span class="text-xs font-bold text-blue-700 uppercase">Overall ATS Score</span>
+            <div class="text-3xl font-extrabold text-blue-700 mono my-1" id="mScore">0%</div>
+            <span class="text-[11px] text-blue-600 font-medium">Weighted Pipeline</span>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
+            <span class="text-xs font-bold text-slate-500 uppercase">Semantic Similarity</span>
+            <div class="text-3xl font-extrabold text-slate-800 mono my-1" id="mSim">0%</div>
+            <span class="text-[11px] text-slate-400">Cosine Distance Matrix</span>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
+            <span class="text-xs font-bold text-slate-500 uppercase">Skills Match</span>
+            <div class="text-3xl font-extrabold text-slate-800 mono my-1" id="mSkill">0%</div>
+            <span class="text-[11px] text-slate-400">Target Tech Skills</span>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
+            <span class="text-xs font-bold text-slate-500 uppercase">Section Structure</span>
+            <div class="text-3xl font-extrabold text-slate-800 mono my-1" id="mSec">0%</div>
+            <span class="text-[11px] text-slate-400">ATS Formatting Audit</span>
+          </div>
+        </div>
+
+        <!-- Detail Breakdown -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+            <h4 class="font-bold text-sm text-slate-800 mb-3">Domain Skills & Keywords</h4>
+            <div class="mb-4">
+              <span class="text-xs font-bold text-emerald-700 block mb-2">✓ Matched in Resume:</span>
+              <div id="matchedTags" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-rose-700 block mb-2">✗ Missing from Target JD:</span>
+              <div id="missingTags" class="flex flex-wrap gap-1.5"></div>
+            </div>
+          </div>
+
+          <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+            <h4 class="font-bold text-sm text-slate-800 mb-3">Resume Structural Section Audit</h4>
+            <div id="sectionAudit" class="space-y-2 text-sm"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Platform Features Section (Anchored to Navbar) -->
+  <section id="features" class="py-16 bg-white border-t border-slate-200">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">Platform Capabilities</h2>
+        <p class="text-3xl font-extrabold text-slate-900 mt-2">Comprehensive ATS Audit Suite</p>
+        <p class="text-slate-500 text-sm mt-2">Designed specifically as a Third Year Computer Science Mini-Project demonstrating applied NLP techniques.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">🎯</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">ATS Compatibility</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Verifies whether resume structure complies with automated parser requirements without tables or obscure fonts.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">🔍</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Keyword Matching</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Extracts n-grams and technical terminology from Job Descriptions to compute strict intersection rates.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">🧠</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Skill Extraction</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Correlates candidate experience with an ontology of languages, frameworks, cloud stacks, and developer tools.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">📐</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Vector Space Alignment</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Calculates multi-dimensional Cosine angles across TF-IDF term vectors to determine true contextual similarity.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">📑</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Section Parsing</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Scans for standard headers including Contact, Education, Skills, Projects, Experience, and Certifications.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-rose-100 text-rose-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">💡</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Gap Remediation</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Produces clear prioritized recommendations to guide the candidate in bridging critical qualification deficits.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section (Anchored to Navbar) -->
+  <section id="workflow" class="py-16 bg-slate-50 border-t border-slate-200">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">Process Architecture</h2>
+        <p class="text-3xl font-extrabold text-slate-900 mt-2">How It Works in 4 Steps</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">1</div>
+          <h4 class="font-bold text-slate-900 text-sm mb-2">Upload Resume</h4>
+          <p class="text-xs text-slate-600">Candidate supplies PDF document; text stream is extracted via PyPDF.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">2</div>
+          <h4 class="font-bold text-slate-900 text-sm mb-2">Job Description</h4>
+          <p class="text-xs text-slate-600">Target role scope, qualifications, and core requirements are provided.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">3</div>
+          <h4 class="font-bold text-slate-900 text-sm mb-2">NLP Vectorization</h4>
+          <p class="text-xs text-slate-600">Stopwords are eliminated, tokens regularized, and TF-IDF matrix generated.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">4</div>
+          <h4 class="font-bold text-slate-900 text-sm mb-2">Detailed Report</h4>
+          <p class="text-xs text-slate-600">Final multi-weighted score and actionable keyword gaps are delivered.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About / NLP Architecture Section (Anchored to Navbar) -->
+  <section id="about" class="py-16 bg-white border-t border-slate-200">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">Academic Context</h2>
+      <h3 class="text-2xl font-bold text-slate-900 mt-2">Natural Language Processing Pipeline</h3>
+      <p class="text-sm text-slate-600 mt-4 leading-relaxed">
+        This project was developed for the Third Year Computer Science curriculum. It demonstrates the real-world application of tokenization, regular expression-based pattern parsing, TF-IDF (Term Frequency-Inverse Document Frequency) weights, and Cosine Vector Space angles to solve the industry challenge of automated candidate evaluation.
+      </p>
+      <div class="mt-8 flex justify-center gap-3 text-xs font-semibold text-slate-600">
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Python 3</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Flask Microframework</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Scikit-Learn</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">PyPDF</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Tailwind CSS</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-auto text-xs text-center">
+    <p>© 2026 SkillSync AI • Third Year Computer Science Mini-Project • All Rights Reserved</p>
+  </footer>
+
+  <!-- Script Wiring Logic -->
+  <script>
+    let isDemoMode = false;
+    const resumeFileInput = document.getElementById('resumeFile');
+    const fileText = document.getElementById('fileText');
+    const jdInput = document.getElementById('jdInput');
+    const jdWordCount = document.getElementById('jdWordCount');
+    const demoBtn = document.getElementById('demoBtn');
+    const evalForm = document.getElementById('evalForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const resultsCard = document.getElementById('resultsCard');
+
+    jdInput.addEventListener('input', () => {
+      const words = jdInput.value.trim() ? jdInput.value.trim().split(/\s+/).length : 0;
+      jdWordCount.textContent = words + " words";
+    });
+
+    resumeFileInput.addEventListener('change', () => {
+      if (resumeFileInput.files.length > 0) {
+        fileText.textContent = "✓ " + resumeFileInput.files[0].name;
+        isDemoMode = false;
+      }
+    });
+
+    demoBtn.addEventListener('click', () => {
+      isDemoMode = true;
+      jdInput.value = "Looking for a Junior Software Engineer with hands-on proficiency in Python, Flask, SQL, and REST APIs. Candidate should know Git version control, Docker fundamentals, and basic Data Structures. Experience with machine learning or scikit-learn is a plus.";
+      jdWordCount.textContent = jdInput.value.split(/\s+/).length + " words";
+      fileText.textContent = "✓ Sample_CS_Resume.pdf (Preloaded Demo)";
+    });
+
+    evalForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const jd = jdInput.value.trim();
+      const file = resumeFileInput.files[0];
+
+      if (!jd) {
+        alert("Pehle Job Description paste karein.");
+        return;
+      }
+      if (!file && !isDemoMode) {
+        alert("Pehle resume PDF upload karein ya 'Preload Demo Data' par click karein.");
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Executing NLP Vectors & Metric Computation...";
+
+      const formData = new FormData();
+      formData.append('job_desc', jd);
+      formData.append('is_demo', isDemoMode);
+      if (file) formData.append('resume_file', file);
+
+      try {
+        const response = await fetch('/analyze', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (response.ok) {
+          document.getElementById('resFilename').textContent = data.filename;
+          document.getElementById('resTime').textContent = data.timestamp;
+          document.getElementById('mScore').textContent = data.ats_score + "%";
+          document.getElementById('mSim').textContent = data.similarity + "%";
+          document.getElementById('mSkill').textContent = data.skill_score + "%";
+          document.getElementById('mSec').textContent = data.sec_score + "%";
+
+          const matchBox = document.getElementById('matchedTags');
+          matchBox.innerHTML = data.matched_skills.length 
+            ? data.matched_skills.map(s => `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
+            : '<span class="text-xs text-slate-400">No direct matches detected.</span>';
+
+          const missBox = document.getElementById('missingTags');
+          missBox.innerHTML = data.missing_skills.length
+            ? data.missing_skills.map(s => `<span class="bg-rose-50 text-rose-700 border border-rose-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
+            : '<span class="text-xs text-emerald-600 font-medium">All target skills detected in resume.</span>';
+
+          const secBox = document.getElementById('sectionAudit');
+          secBox.innerHTML = Object.entries(data.sections).map(([sec, found]) => `
+            <div class="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-none">
+              <span class="text-slate-600 font-medium">${sec}</span>
+              <span class="${found ? 'text-emerald-600' : 'text-rose-500'} font-bold text-xs">${found ? '✓ Detected' : '✗ Missing'}</span>
+            </div>
+          `).join('');
+
+          resultsCard.classList.remove('hidden');
+          resultsCard.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          alert(data.error || "Evaluation process error.");
+        }
+      } catch (err) {
+        alert("Server communication failure: " + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "🚀 Run Comprehensive ATS Evaluation";
+      }
+    });
+  </script>
+</body>
+</html>
