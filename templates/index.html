@@ -4,10 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SkillSync AI — ATS Intelligence & Resume Screener</title>
+  
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
   
-  <!-- Export Libraries: SheetJS (Excel), jsPDF & AutoTable (PDF) -->
+  <!-- Google One Tap / Sign-In Client SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Export Libraries -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -16,14 +21,9 @@
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .mono { font-family: 'JetBrains Mono', monospace; }
 
-    /* Print Optimization: Isolates the candidate evaluation report card */
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      #resultsCard, #resultsCard * {
-        visibility: visible;
-      }
+      body * { visibility: hidden; }
+      #resultsCard, #resultsCard * { visibility: visible; }
       #resultsCard {
         position: absolute;
         left: 0;
@@ -33,69 +33,87 @@
         padding: 0;
         border: none;
       }
-      #printBtn, #exportBtnGroup, #docExportBtn {
-        display: none !important;
-      }
+      #printBtn, #exportBtnGroup, #docExportBtn { display: none !important; }
     }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
 
-  <!-- Top Navbar -->
+  <!-- Top Navigation Bar -->
   <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-      <a href="#home" class="flex items-center space-x-3 cursor-pointer">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <a href="#home" class="flex items-center space-x-2 sm:space-x-3 cursor-pointer">
         <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-500/30">⚡</div>
         <span class="font-extrabold text-xl tracking-tight text-slate-900">SkillSync<span class="text-blue-600">.ai</span></span>
       </a>
-      <div class="hidden md:flex items-center space-x-8 text-sm font-semibold text-slate-600">
+      
+      <div class="hidden lg:flex items-center space-x-8 text-sm font-semibold text-slate-600">
         <a href="#analyzer" class="hover:text-blue-600 transition">Resume Analyzer</a>
         <a href="#features" class="hover:text-blue-600 transition">Platform Features</a>
         <a href="#workflow" class="hover:text-blue-600 transition">How It Works</a>
         <a href="#about" class="hover:text-blue-600 transition">NLP Architecture</a>
       </div>
-      <div>
-        <a href="#analyzer" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition">Launch Evaluator</a>
+
+      <!-- Auth Controls -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div id="guestNav" class="flex items-center gap-2">
+          <button onclick="openAuthModal('login')" class="text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 px-3 py-2 transition">
+            Sign In
+          </button>
+          <button onclick="openAuthModal('register')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition">
+            Create Account
+          </button>
+        </div>
+
+        <div id="userNav" class="hidden flex items-center gap-2 sm:gap-3">
+          <button onclick="openHistoryModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 flex items-center gap-1.5 transition">
+            <span>📜</span> My History (<span id="userScanCount" class="text-blue-600 font-bold">0</span>)
+          </button>
+          <span id="userEmailBadge" class="hidden sm:inline-block text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200"></span>
+          <button onclick="handleLogout()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1.5 transition">
+            Logout
+          </button>
+        </div>
       </div>
     </div>
   </nav>
 
   <!-- Hero Section -->
-  <header id="home" class="pt-16 pb-12 bg-gradient-to-b from-white via-slate-50 to-slate-100 border-b border-slate-200">
+  <header id="home" class="pt-14 pb-12 bg-gradient-to-b from-white via-slate-50 to-slate-100 border-b border-slate-200">
     <div class="max-w-5xl mx-auto px-6 text-center">
       <div class="inline-flex items-center space-x-2 bg-blue-50 border border-blue-200 text-blue-700 px-3.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-6">
-        <span>Enterprise AI Edition</span> • <span>NLP Vector Engine Active</span>
+        <span>Enterprise AI Edition</span> • <span>Multi-Format Stream Active</span>
       </div>
-      <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-        Analyze Your Resume. <br><span class="text-blue-600">Maximize Your ATS Match Rate.</span>
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        Analyze Candidate Resumes. <br><span class="text-blue-600">Maximize Multi-Vector ATS Matching.</span>
       </h1>
-      <p class="mt-4 text-slate-600 max-w-2xl mx-auto text-base sm:text-lg">
-        Automated Resume Screening System driven by Natural Language Processing, TF-IDF Vector Space Modeling, and Multi-Criteria ATS Scoring.
+      <p class="mt-4 text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
+        Automated Enterprise Screening Engine powered by Bi-gram TF-IDF NLP Modeling, Ontology Skill Extraction, and Secure Verification Codes.
       </p>
-      <div class="mt-8 flex justify-center gap-4">
-        <a href="#analyzer" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-xl shadow-md transition">Analyze My Resume</a>
-        <a href="#workflow" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold px-6 py-3 rounded-xl transition">How It Works</a>
+      <div class="mt-8 flex justify-center gap-3 sm:gap-4">
+        <a href="#analyzer" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 sm:px-6 py-3 rounded-xl shadow-md transition text-sm">Analyze Resumes</a>
+        <a href="#workflow" class="bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 font-semibold px-5 sm:px-6 py-3 rounded-xl transition text-sm">How It Works</a>
       </div>
     </div>
   </header>
 
-  <!-- Analyzer Workspace -->
-  <main id="analyzer" class="max-w-6xl mx-auto px-6 py-12 flex-1 w-full">
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 p-6 sm:p-8">
+  <!-- Workspace Container -->
+  <main id="analyzer" class="max-w-6xl mx-auto px-4 sm:px-6 py-10 flex-1 w-full">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 p-5 sm:p-8">
       
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-slate-100 mb-6 gap-4">
         <div>
-          <h2 class="text-xl font-bold text-slate-900">ATS Evaluation Workspace</h2>
-          <p class="text-xs text-slate-500 mt-1">Upload candidate resumes (PDF, DOCX, TXT) and target Job Description for vector screening.</p>
+          <h2 class="text-lg sm:text-xl font-bold text-slate-900">ATS Evaluation Workspace</h2>
+          <p class="text-xs text-slate-500 mt-1">Upload candidate resumes (PDF, DOCX, TXT) and target Job Description for screening.</p>
         </div>
-        <div class="flex items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
           <select id="roleSelector" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">⚡ Select Preset Role JD</option>
             <option value="software_engineer">Junior Software Engineer</option>
             <option value="data_scientist">Data Scientist / ML Engineer</option>
             <option value="frontend_dev">Frontend Web Developer</option>
           </select>
-          <button id="demoBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg transition border border-slate-300 flex items-center gap-1.5">
+          <button id="demoBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg transition border border-slate-300 flex items-center gap-1.5">
             <span>⚡</span> Demo Data
           </button>
         </div>
@@ -104,7 +122,7 @@
       <form id="evalForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">1. Target Job Description</label>
-          <textarea id="jdInput" rows="9" class="w-full border border-slate-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder-slate-400 bg-slate-50/50" placeholder="Paste the technical job description here..."></textarea>
+          <textarea id="jdInput" rows="9" class="w-full border border-slate-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder-slate-400 bg-slate-50/50" placeholder="Paste technical job description here..."></textarea>
           <div class="flex justify-between text-xs text-slate-400 mt-1 px-1">
             <span id="jdWordCount">0 words</span>
             <span>Required for TF-IDF Vectorization</span>
@@ -112,7 +130,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-bold text-slate-700 mb-2">2. Upload Candidate Resume (PDF, DOCX, TXT)</label>
+          <label class="block text-sm font-bold text-slate-700 mb-2">2. Upload Candidate Resumes (PDF, DOCX, TXT)</label>
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer bg-slate-50/50 flex flex-col justify-center items-center h-[216px]" onclick="document.getElementById('resumeFile').click()">
             <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3">📄</div>
             <p class="text-sm font-semibold text-slate-700" id="fileText">Click to browse or drop resume documents</p>
@@ -133,17 +151,16 @@
       <div id="resultsCard" class="hidden mt-10 pt-8 border-t border-slate-200">
         
         <!-- Batch Leaderboard Table -->
-        <div id="batchTableCard" style="display: none;" class="mb-8 bg-slate-50 border border-slate-200 rounded-xl p-5">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+        <div id="batchTableCard" style="display: none;" class="mb-8 bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
+          <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-4 gap-3">
             <div>
               <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
                 <span>🏆 Candidates Leaderboard & Ranking</span>
               </h4>
-              <p class="text-[11px] text-slate-500">Click on any candidate row below to view their detailed audit report.</p>
+              <p class="text-[11px] text-slate-500">Click on any candidate row below to inspect their detailed audit report.</p>
             </div>
             
-            <!-- Multi-Format Batch Export Actions -->
-            <div id="exportBtnGroup" class="flex flex-wrap items-center gap-2">
+            <div id="exportBtnGroup" class="flex flex-wrap items-center gap-1.5 sm:gap-2">
               <span class="text-[11px] font-semibold text-slate-400">Export:</span>
               <button type="button" onclick="exportLeaderboardExcel()" class="bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition">
                 <span>📊</span> Excel (.xlsx)
@@ -182,7 +199,7 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
           <div>
             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Candidate Detailed Audit</span>
-            <h3 class="text-2xl font-extrabold text-slate-900" id="resFilename">Report</h3>
+            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900" id="resFilename">Report</h3>
             <p class="text-xs text-slate-500" id="resTime"></p>
           </div>
           <div class="flex items-center gap-2">
@@ -328,12 +345,14 @@
       <p class="text-sm text-slate-600 mt-4 leading-relaxed">
         Engineered for high-precision screening. Demonstrates the real-world application of multi-document tokenization, bi-gram n-gram vectorization, regular expression parsing, TF-IDF weights, and Cosine Vector Space angles to solve automated candidate evaluation.
       </p>
-      <div class="mt-8 flex flex-wrap justify-center gap-2 sm:gap-3 text-xs font-semibold text-slate-600 px-4">
-        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Python 3</span>
-        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Flask Microframework</span>
-        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Scikit-Learn</span>
-        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">PyPDF & python-docx</span>
-        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Tailwind CSS</span>
+      
+      <div class="mt-8 flex flex-wrap justify-center gap-2 sm:gap-3 text-xs font-semibold text-slate-600 px-2 sm:px-4">
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">Python 3</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">Flask Microframework</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">Scikit-Learn</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">PyPDF & docx</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">Google OAuth 2.0</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">OTP Security</span>
       </div>
     </div>
   </section>
@@ -343,11 +362,118 @@
     <p>© 2026 SkillSync AI • Enterprise Resume Evaluation System • All Rights Reserved</p>
   </footer>
 
+  <!-- ================= AUTHENTICATION MODAL ================= -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 relative">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+      <h3 id="authModalTitle" class="text-xl font-bold text-slate-900 mb-1">Sign In</h3>
+      <p id="authModalSub" class="text-xs text-slate-500 mb-5">Sign in to save your resume evaluation audit history.</p>
+
+      <!-- Google Sign In Button Container -->
+      <div id="googleBtnContainer" class="mb-4 flex justify-center w-full">
+        <div id="g_id_onload"
+             data-client_id="{{ google_client_id }}"
+             data-callback="handleGoogleResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin" 
+             data-type="standard" 
+             data-shape="rectangular" 
+             data-theme="outline" 
+             data-text="signin_with" 
+             data-size="large" 
+             data-logo_alignment="left" 
+             data-width="320">
+        </div>
+      </div>
+
+      <div id="authDivider" class="relative my-4">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+        <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-semibold">Or with Email</span></div>
+      </div>
+
+      <div class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
+          <div class="flex gap-2">
+            <input type="email" id="authEmail" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="recruiter@company.com">
+            <button type="button" id="sendOtpBtn" onclick="handleSendOTP()" class="hidden bg-slate-100 hover:bg-slate-200 text-blue-600 border border-slate-300 text-xs font-bold px-3 rounded-xl whitespace-nowrap transition">
+              Send Code
+            </button>
+          </div>
+        </div>
+
+        <!-- 6-Digit OTP Box (User enters from email) -->
+        <div id="otpFieldContainer" class="hidden">
+          <label class="block text-xs font-bold text-blue-700 uppercase mb-1">6-Digit Verification Code</label>
+          <input type="text" id="authOtp" maxlength="6" class="w-full border border-blue-300 bg-blue-50/50 rounded-xl p-2.5 text-center text-base tracking-widest font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="••••••">
+          <span id="demoOtpBadge" class="text-[11px] text-slate-500 font-medium mt-1 block"></span>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label id="authPasswordLabel" class="block text-xs font-bold text-slate-700 uppercase">Password</label>
+            <button type="button" id="forgotPassLink" onclick="openAuthModal('forgot')" class="text-[11px] text-blue-600 font-semibold hover:underline">Forgot password?</button>
+          </div>
+          <input type="password" id="authPassword" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="••••••••">
+        </div>
+
+        <div id="authError" class="hidden text-xs font-semibold text-rose-600"></div>
+        <div id="authSuccess" class="hidden text-xs font-semibold text-emerald-600"></div>
+
+        <button type="button" id="authSubmitBtn" onclick="submitAuthForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition text-sm shadow-md">
+          Sign In
+        </button>
+
+        <p class="text-xs text-center text-slate-500 pt-2">
+          <span id="authToggleText">Don't have an account?</span>
+          <button type="button" onclick="toggleAuthMode()" id="authToggleBtn" class="text-blue-600 font-bold hover:underline ml-1">Create one</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCAN HISTORY MODAL ================= -->
+  <div id="historyModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <span>📜</span> Personal Resume Evaluation History
+          </h3>
+          <p class="text-xs text-slate-500">Persistent database audit log stored in your account session.</p>
+        </div>
+        <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-2">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 mt-4">
+        <table class="w-full text-left text-xs text-slate-600">
+          <thead class="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold sticky top-0">
+            <tr>
+              <th class="p-2.5">Date & Time</th>
+              <th class="p-2.5">Candidate Document</th>
+              <th class="p-2.5">Target Role</th>
+              <th class="p-2.5 text-center">Status</th>
+              <th class="p-2.5 text-center">ATS Score</th>
+              <th class="p-2.5 text-center">Similarity</th>
+              <th class="p-2.5 text-center">Skills</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+        <div id="historyEmptyState" class="hidden text-center py-12 text-slate-400 text-xs">
+          No evaluations stored yet. Run an analysis while logged in to view records here.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Script Logic -->
   <script>
     let isDemoMode = false;
     let globalBatchResults = [];
     let currentActiveIndex = 0;
+    let currentAuthMode = 'login';
 
     const resumeFileInput = document.getElementById('resumeFile');
     const fileText = document.getElementById('fileText');
@@ -398,6 +524,280 @@
       fileText.textContent = "⚡ Sample_CS_Resume.pdf (Preloaded Demo)";
     });
 
+    // ---------------- AUTHENTICATION & GOOGLE / OTP ---------------- //
+    async function checkAuthStatus() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (data.logged_in) {
+          document.getElementById('guestNav').classList.add('hidden');
+          document.getElementById('userNav').classList.remove('hidden');
+          document.getElementById('userEmailBadge').textContent = data.email;
+          document.getElementById('userScanCount').textContent = data.scan_count;
+        } else {
+          document.getElementById('guestNav').classList.remove('hidden');
+          document.getElementById('userNav').classList.add('hidden');
+        }
+      } catch (e) {
+        console.error("Auth status sync error:", e);
+      }
+    }
+
+    async function handleGoogleResponse(response) {
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: response.credential })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          closeAuthModal();
+          checkAuthStatus();
+        } else {
+          alert(data.error || "Google Sign-In failed.");
+        }
+      } catch (err) {
+        alert("Google Authentication network error.");
+      }
+    }
+
+    function openAuthModal(mode) {
+      currentAuthMode = mode;
+      document.getElementById('authError').classList.add('hidden');
+      document.getElementById('authSuccess').classList.add('hidden');
+      document.getElementById('authEmail').value = '';
+      document.getElementById('authPassword').value = '';
+      document.getElementById('authOtp').value = '';
+      document.getElementById('demoOtpBadge').textContent = '';
+
+      const googleContainer = document.getElementById('googleBtnContainer');
+      const divider = document.getElementById('authDivider');
+      const sendOtpBtn = document.getElementById('sendOtpBtn');
+      const otpContainer = document.getElementById('otpFieldContainer');
+      const forgotLink = document.getElementById('forgotPassLink');
+      const passLabel = document.getElementById('authPasswordLabel');
+
+      if (mode === 'login') {
+        document.getElementById('authModalTitle').textContent = 'Sign In';
+        document.getElementById('authModalSub').textContent = 'Access your personal resume audit history.';
+        document.getElementById('authSubmitBtn').textContent = 'Sign In';
+        document.getElementById('authToggleText').textContent = "Don't have an account?";
+        document.getElementById('authToggleBtn').textContent = 'Create one';
+        passLabel.textContent = 'Password';
+        googleContainer.classList.remove('hidden');
+        divider.classList.remove('hidden');
+        sendOtpBtn.classList.add('hidden');
+        otpContainer.classList.add('hidden');
+        forgotLink.classList.remove('hidden');
+      } else if (mode === 'register') {
+        document.getElementById('authModalTitle').textContent = 'Create Account';
+        document.getElementById('authModalSub').textContent = 'Verify your email with a 6-digit code.';
+        document.getElementById('authSubmitBtn').textContent = 'Verify & Register';
+        document.getElementById('authToggleText').textContent = 'Already have an account?';
+        document.getElementById('authToggleBtn').textContent = 'Sign In';
+        passLabel.textContent = 'Choose Password';
+        googleContainer.classList.remove('hidden');
+        divider.classList.remove('hidden');
+        sendOtpBtn.classList.remove('hidden');
+        otpContainer.classList.remove('hidden');
+        forgotLink.classList.add('hidden');
+      } else if (mode === 'forgot') {
+        document.getElementById('authModalTitle').textContent = 'Reset Password';
+        document.getElementById('authModalSub').textContent = 'Enter email to receive reset verification code.';
+        document.getElementById('authSubmitBtn').textContent = 'Update Password';
+        document.getElementById('authToggleText').textContent = 'Remembered your password?';
+        document.getElementById('authToggleBtn').textContent = 'Sign In';
+        passLabel.textContent = 'New Password';
+        googleContainer.classList.add('hidden');
+        divider.classList.add('hidden');
+        sendOtpBtn.classList.remove('hidden');
+        otpContainer.classList.remove('hidden');
+        forgotLink.classList.add('hidden');
+      }
+
+      document.getElementById('authModal').classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
+    }
+
+    function toggleAuthMode() {
+      openAuthModal(currentAuthMode === 'login' ? 'register' : 'login');
+    }
+
+    async function handleSendOTP() {
+      const email = document.getElementById('authEmail').value.trim();
+      const errBox = document.getElementById('authError');
+      const successBox = document.getElementById('authSuccess');
+      errBox.classList.add('hidden');
+      successBox.classList.add('hidden');
+
+      if (!email) {
+        errBox.textContent = "Please enter an email address first.";
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      const sendBtn = document.getElementById('sendOtpBtn');
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Sending...";
+
+      try {
+        const purpose = currentAuthMode === 'forgot' ? 'forgot' : 'register';
+        const res = await fetch('/api/auth/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, purpose })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          successBox.textContent = data.message;
+          successBox.classList.remove('hidden');
+          document.getElementById('authOtp').value = '';
+          document.getElementById('demoOtpBadge').textContent = 'Enter the 6-digit code received on your email.';
+        } else {
+          errBox.textContent = data.error || "Failed to send verification code.";
+          errBox.classList.remove('hidden');
+        }
+      } catch (e) {
+        errBox.textContent = "Network error sending verification code.";
+        errBox.classList.remove('hidden');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send Code";
+      }
+    }
+
+    async function submitAuthForm() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value.trim();
+      const otp = document.getElementById('authOtp').value.trim();
+      const errBox = document.getElementById('authError');
+      const successBox = document.getElementById('authSuccess');
+      errBox.classList.add('hidden');
+      successBox.classList.add('hidden');
+
+      if (!email || !password) {
+        errBox.textContent = "Please fill in email and password.";
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      if (currentAuthMode === 'login') {
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            closeAuthModal();
+            checkAuthStatus();
+          } else {
+            errBox.textContent = data.error || "Login failed.";
+            errBox.classList.remove('hidden');
+          }
+        } catch (err) {
+          errBox.textContent = "Server communication failure.";
+          errBox.classList.remove('hidden');
+        }
+      } else if (currentAuthMode === 'register') {
+        if (!otp) {
+          errBox.textContent = "Please enter the 6-digit verification code.";
+          errBox.classList.remove('hidden');
+          return;
+        }
+        try {
+          const res = await fetch('/api/auth/verify-register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, otp })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            closeAuthModal();
+            checkAuthStatus();
+          } else {
+            errBox.textContent = data.error || "Registration failed.";
+            errBox.classList.remove('hidden');
+          }
+        } catch (err) {
+          errBox.textContent = "Server communication failure.";
+          errBox.classList.remove('hidden');
+        }
+      } else if (currentAuthMode === 'forgot') {
+        if (!otp) {
+          errBox.textContent = "Please enter the 6-digit verification code.";
+          errBox.classList.remove('hidden');
+          return;
+        }
+        try {
+          const res = await fetch('/api/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp, new_password: password })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            successBox.textContent = data.message;
+            successBox.classList.remove('hidden');
+            setTimeout(() => openAuthModal('login'), 1200);
+          } else {
+            errBox.textContent = data.error || "Reset password failed.";
+            errBox.classList.remove('hidden');
+          }
+        } catch (err) {
+          errBox.textContent = "Server communication failure.";
+          errBox.classList.remove('hidden');
+        }
+      }
+    }
+
+    async function handleLogout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      checkAuthStatus();
+    }
+
+    async function openHistoryModal() {
+      const modal = document.getElementById('historyModal');
+      const tbody = document.getElementById('historyTableBody');
+      const emptyState = document.getElementById('historyEmptyState');
+      tbody.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/history');
+        const data = await res.json();
+
+        if (res.ok && data.history && data.history.length > 0) {
+          emptyState.classList.add('hidden');
+          tbody.innerHTML = data.history.map(s => `
+            <tr class="hover:bg-slate-50 transition">
+              <td class="p-2.5 text-slate-400 whitespace-nowrap text-[11px]">${s.timestamp}</td>
+              <td class="p-2.5 font-semibold text-slate-800 truncate max-w-[200px]">${s.filename}</td>
+              <td class="p-2.5 text-slate-500">${s.role_title}</td>
+              <td class="p-2.5 text-center">${getBadgeHTML(s.status)}</td>
+              <td class="p-2.5 text-center font-bold text-blue-700">${s.ats_score}%</td>
+              <td class="p-2.5 text-center">${s.similarity}%</td>
+              <td class="p-2.5 text-center">${s.skill_score}%</td>
+            </tr>
+          `).join('');
+        } else {
+          emptyState.classList.remove('hidden');
+        }
+        modal.classList.remove('hidden');
+      } catch (e) {
+        alert("Failed to load evaluation history.");
+      }
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('historyModal').classList.add('hidden');
+    }
+
+    // ---------------- REPORT & LEADERBOARD RENDERING ---------------- //
     function getBadgeHTML(status) {
       if (status === "Shortlisted") {
         return '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">✓ Shortlisted</span>';
@@ -422,13 +822,13 @@
 
       const badge = document.getElementById('mStatusBadge');
       if (report.status === "Shortlisted") {
-        badge.className = "inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full mt-1 bg-emerald-100 text-emerald-800 border border-emerald-300";
+        badge.className = "inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1 bg-emerald-100 text-emerald-800 border border-emerald-300";
         badge.textContent = "✓ Shortlisted";
       } else if (report.status === "Potential Match" || report.status === "Under Review") {
-        badge.className = "inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full mt-1 bg-amber-100 text-amber-800 border border-amber-300";
+        badge.className = "inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1 bg-amber-100 text-amber-800 border border-amber-300";
         badge.textContent = "⚡ Potential Match";
       } else {
-        badge.className = "inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full mt-1 bg-rose-100 text-rose-800 border border-rose-300";
+        badge.className = "inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1 bg-rose-100 text-rose-800 border border-rose-300";
         badge.textContent = "✗ Rejected";
       }
 
@@ -459,11 +859,7 @@
       });
     }
 
-    /* ======================================================
-       MULTI-FORMAT EXPORT ENGINE (Excel, PDF, CSV, JSON, DOC)
-       ====================================================== */
-
-    // 1. Export Leaderboard to Microsoft Excel (.xlsx)
+    // ---------------- MULTI-FORMAT EXPORTS ---------------- //
     function exportLeaderboardExcel() {
       if (!globalBatchResults.length) return;
       const dataRows = globalBatchResults.map((r, i) => ({
@@ -478,23 +874,19 @@
         "Missing Skills": r.missing_skills.join(", "),
         "Timestamp": r.timestamp
       }));
-
       const worksheet = XLSX.utils.json_to_sheet(dataRows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "ATS Leaderboard");
       XLSX.writeFile(workbook, `SkillSync_Leaderboard_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
-    // 2. Export Leaderboard to Formatted PDF (.pdf)
     function exportLeaderboardPDF() {
       if (!globalBatchResults.length) return;
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'pt', 'a4');
-
       doc.setFontSize(16);
       doc.setTextColor(30, 41, 59);
       doc.text("SkillSync AI — Candidate ATS Leaderboard Report", 40, 45);
-
       doc.setFontSize(9);
       doc.setTextColor(100, 116, 139);
       doc.text(`Generated on: ${new Date().toLocaleString()} | Evaluated Candidates: ${globalBatchResults.length}`, 40, 62);
@@ -517,11 +909,9 @@
         headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
         styles: { fontSize: 8, cellPadding: 6 }
       });
-
       doc.save(`SkillSync_Leaderboard_${new Date().toISOString().slice(0,10)}.pdf`);
     }
 
-    // 3. Export Leaderboard to CSV (.csv)
     function exportLeaderboardCSV() {
       if (!globalBatchResults.length) return;
       let csvContent = "data:text/csv;charset=utf-8,Rank,Candidate Resume,Status,ATS Score,Semantic Similarity,Skills Match,Section Score\n";
@@ -537,7 +927,6 @@
       document.body.removeChild(link);
     }
 
-    // 4. Export Batch Data to JSON (.json)
     function exportLeaderboardJSON() {
       if (!globalBatchResults.length) return;
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(globalBatchResults, null, 2));
@@ -549,7 +938,6 @@
       document.body.removeChild(link);
     }
 
-    // 5. Export Active Candidate Individual Audit to Microsoft Word (.doc)
     function exportCandidateDoc() {
       const report = globalBatchResults[currentActiveIndex];
       if (!report) return;
@@ -560,7 +948,6 @@
         <style>
           body { font-family: Arial, sans-serif; margin: 20px; color: #1e293b; }
           h1 { color: #2563eb; }
-          .badge { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
           table { width: 100%; border-collapse: collapse; margin-top: 15px; }
           th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
           th { background-color: #f1f5f9; }
@@ -602,6 +989,7 @@
       URL.revokeObjectURL(url);
     }
 
+    // ---------------- EVALUATION FORM SUBMISSION ---------------- //
     evalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const jd = jdInput.value.trim();
@@ -619,8 +1007,10 @@
       submitBtn.disabled = true;
       submitBtn.textContent = "Executing NLP Vectors & Metric Computation...";
 
+      const roleSelectedText = roleSelector.options[roleSelector.selectedIndex].text;
       const formData = new FormData();
       formData.append('job_desc', jd);
+      formData.append('role_name', roleSelector.value ? roleSelectedText : 'Custom Position');
       formData.append('is_demo', isDemoMode);
       if (files.length > 0) {
         for (let i = 0; i < files.length; i++) {
@@ -659,6 +1049,7 @@
           }
 
           renderCandidateDetails(0);
+          checkAuthStatus();
 
           resultsCard.classList.remove('hidden');
           resultsCard.scrollIntoView({ behavior: 'smooth' });
@@ -672,6 +1063,8 @@
         submitBtn.textContent = "🚀 Run Comprehensive ATS Evaluation";
       }
     });
+
+    checkAuthStatus();
   </script>
 </body>
 </html>
