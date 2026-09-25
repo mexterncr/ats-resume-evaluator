@@ -97,9 +97,9 @@
       <div id="resultsCard" class="hidden mt-10 pt-8 border-t border-slate-200">
         
         <!-- Batch Comparison Table (Multiple Resumes ke liye) -->
-        <div id="batchTableCard" class="hidden mb-8 bg-slate-50 border border-slate-200 rounded-xl p-5">
+        <div id="batchTableCard" style="display: none;" class="mb-8 bg-slate-50 border border-slate-200 rounded-xl p-5">
           <h4 class="font-bold text-sm text-slate-800 mb-3 flex items-center justify-between">
-            <span>🏆 Candidates Leaderboard & Ranking</span>
+            <span class="flex items-center gap-2">🏆 Candidates Leaderboard & Ranking</span>
             <span class="text-xs font-normal text-slate-500">Sorted by Highest ATS Score</span>
           </h4>
           <div class="overflow-x-auto">
@@ -344,31 +344,32 @@
         const data = await response.json();
 
         if (response.ok) {
-          const isBatch = data.multiple && data.results && data.results.length > 1;
+          const isBatch = Boolean(data.results && data.results.length > 1);
           const report = data.multiple ? data.results[0] : data;
 
           // Multi-Resume Leaderboard Table Populator
           const batchTableCard = document.getElementById('batchTableCard');
           const batchTableBody = document.getElementById('batchTableBody');
+          
           if (batchTableCard && batchTableBody) {
             if (isBatch) {
               batchTableBody.innerHTML = data.results.map((res, idx) => `
-                <tr class="${idx === 0 ? 'bg-blue-50/70 font-semibold text-blue-900' : 'hover:bg-slate-100/50'}">
-                  <td class="p-2.5 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#${idx+1}`))}</td>
-                  <td class="p-2.5 truncate max-w-[220px]">${res.filename}</td>
-                  <td class="p-2.5 text-center font-bold text-blue-700">${res.ats_score}%</td>
-                  <td class="p-2.5 text-center">${res.similarity}%</td>
-                  <td class="p-2.5 text-center">${res.skill_score}%</td>
-                  <td class="p-2.5 text-center">${res.sec_score}%</td>
+                <tr class="${idx === 0 ? 'bg-blue-100/60 font-semibold text-blue-900' : 'hover:bg-slate-100/70'}">
+                  <td class="p-3 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#${idx+1}`))}</td>
+                  <td class="p-3 font-medium text-slate-800">${res.filename}</td>
+                  <td class="p-3 text-center font-extrabold text-blue-600">${res.ats_score}%</td>
+                  <td class="p-3 text-center text-slate-600">${res.similarity}%</td>
+                  <td class="p-3 text-center text-slate-600">${res.skill_score}%</td>
+                  <td class="p-3 text-center text-slate-600">${res.sec_score}%</td>
                 </tr>
               `).join('');
-              batchTableCard.classList.remove('hidden');
+              batchTableCard.style.display = 'block';
             } else {
-              batchTableCard.classList.add('hidden');
+              batchTableCard.style.display = 'none';
             }
           }
 
-          document.getElementById('resFilename').textContent = report.filename + (isBatch ? ` (Top Match of ${data.results.length})` : '');
+          document.getElementById('resFilename').textContent = report.filename + (isBatch ? ` (Rank #1 of ${data.results.length})` : '');
           document.getElementById('resTime').textContent = report.timestamp;
           document.getElementById('mScore').textContent = report.ats_score + "%";
           document.getElementById('mSim').textContent = report.similarity + "%";
