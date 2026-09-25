@@ -1,4 +1,5 @@
 flask
-scikit-learn
-pypdf
 gunicorn
+pypdf
+scikit-learn
+python-docx
