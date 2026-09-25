@@ -68,7 +68,7 @@
       <form id="evalForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label class="block text-sm font-bold text-slate-700 mb-2">1. Target Job Description</label>
-          <textarea id="jdInput" name="job_desc" rows="9" class="w-full border border-slate-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" required>Looking for a Junior Software Engineer with hands-on proficiency in Python, Flask, SQL, and REST APIs. Familiarity with Git, Docker, Data Structures, and scikit-learn for machine learning tasks is preferred. Must possess good debugging and communication skills.</textarea>
+          <textarea id="jdInput" name="job_desc" rows="9" class="w-full border border-slate-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Paste target Job Description here..." required></textarea>
           <div class="flex justify-between text-xs text-slate-400 mt-1 px-1">
             <span id="jdWordCount">0 words</span>
             <span>Required for TF-IDF Vectorization</span>
@@ -80,8 +80,8 @@
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer bg-slate-50/50 flex flex-col justify-center items-center h-[216px]" onclick="document.getElementById('resumeFile').click()">
             <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3">📄</div>
             <p class="text-sm font-semibold text-slate-700" id="fileText">Click to browse or drop PDF resume</p>
-            <p class="text-xs text-slate-400 mt-1">Accepts standard PDF documents up to 5 MB</p>
-            <input type="file" name="resume_file" id="resumeFile" accept=".pdf" multiple required>
+            <p class="text-xs text-slate-400 mt-1">Accepts multiple standard PDF documents up to 5 MB</p>
+            <input type="file" name="resume_file" id="resumeFile" accept=".pdf" multiple class="hidden">
           </div>
           <p class="text-xs text-slate-400 mt-2 px-1">Parsed using PyPDF text extraction stream</p>
         </div>
@@ -160,7 +160,7 @@
       <div class="text-center max-w-2xl mx-auto mb-12">
         <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">Platform Capabilities</h2>
         <p class="text-3xl font-extrabold text-slate-900 mt-2">Comprehensive ATS Audit Suite</p>
-        <p class="text-slate-500 text-sm mt-2">Designed specifically as a Third Year Computer Science Mini-Project demonstrating applied NLP techniques.</p>
+        <p class="text-slate-500 text-sm mt-2">Enterprise-grade resume analysis driven by applied NLP algorithms and vector semantic search.</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -234,10 +234,10 @@
   <!-- About / NLP Architecture Section (Anchored to Navbar) -->
   <section id="about" class="py-16 bg-white border-t border-slate-200">
     <div class="max-w-4xl mx-auto px-6 text-center">
-      <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">Academic Context</h2>
+      <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">System Engine</h2>
       <h3 class="text-2xl font-bold text-slate-900 mt-2">Natural Language Processing Pipeline</h3>
       <p class="text-sm text-slate-600 mt-4 leading-relaxed">
-        This project was developed for the Third Year Computer Science curriculum. It demonstrates the real-world application of tokenization, regular expression-based pattern parsing, TF-IDF (Term Frequency-Inverse Document Frequency) weights, and Cosine Vector Space angles to solve the industry challenge of automated candidate evaluation.
+        Engineered for high-precision screening. Demonstrates the real-world application of tokenization, regular expression-based pattern parsing, TF-IDF (Term Frequency-Inverse Document Frequency) weights, and Cosine Vector Space angles to solve the industry challenge of automated candidate evaluation.
       </p>
       <div class="mt-8 flex justify-center gap-3 text-xs font-semibold text-slate-600">
         <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Python 3</span>
@@ -251,7 +251,7 @@
 
   <!-- Footer -->
   <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-auto text-xs text-center">
-    <p>© 2026 SkillSync AI • Third Year Computer Science Mini-Project • All Rights Reserved</p>
+    <p>© 2026 SkillSync AI • Enterprise Resume Evaluation System • All Rights Reserved</p>
   </footer>
 
   <!-- Script Wiring Logic -->
@@ -272,7 +272,10 @@
     });
 
     resumeFileInput.addEventListener('change', () => {
-      if (resumeFileInput.files.length > 0) {
+      if (resumeFileInput.files.length > 1) {
+        fileText.textContent = `✓ ${resumeFileInput.files.length} PDF resumes selected`;
+        isDemoMode = false;
+      } else if (resumeFileInput.files.length === 1) {
         fileText.textContent = "✓ " + resumeFileInput.files[0].name;
         isDemoMode = false;
       }
@@ -280,21 +283,22 @@
 
     demoBtn.addEventListener('click', () => {
       isDemoMode = true;
+      resumeFileInput.value = "";
       jdInput.value = "Looking for a Junior Software Engineer with hands-on proficiency in Python, Flask, SQL, and REST APIs. Candidate should know Git version control, Docker fundamentals, and basic Data Structures. Experience with machine learning or scikit-learn is a plus.";
       jdWordCount.textContent = jdInput.value.split(/\s+/).length + " words";
-      fileText.textContent = "✓ Sample_CS_Resume.pdf (Preloaded Demo)";
+      fileText.textContent = "⚡ Sample_CS_Resume.pdf (Preloaded Demo)";
     });
 
     evalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const jd = jdInput.value.trim();
-      const file = resumeFileInput.files[0];
+      const files = resumeFileInput.files;
 
       if (!jd) {
         alert("Pehle Job Description paste karein.");
         return;
       }
-      if (!file && !isDemoMode) {
+      if (files.length === 0 && !isDemoMode) {
         alert("Pehle resume PDF upload karein ya 'Preload Demo Data' par click karein.");
         return;
       }
@@ -305,32 +309,38 @@
       const formData = new FormData();
       formData.append('job_desc', jd);
       formData.append('is_demo', isDemoMode);
-      if (file) formData.append('resume_file', file);
+      if (files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          formData.append('resume_file', files[i]);
+        }
+      }
 
       try {
         const response = await fetch('/analyze', { method: 'POST', body: formData });
         const data = await response.json();
 
         if (response.ok) {
-          document.getElementById('resFilename').textContent = data.filename;
-          document.getElementById('resTime').textContent = data.timestamp;
-          document.getElementById('mScore').textContent = data.ats_score + "%";
-          document.getElementById('mSim').textContent = data.similarity + "%";
-          document.getElementById('mSkill').textContent = data.skill_score + "%";
-          document.getElementById('mSec').textContent = data.sec_score + "%";
+          const report = data.multiple ? data.results[0] : data;
+
+          document.getElementById('resFilename').textContent = report.filename + (data.multiple ? ` (Top Match of ${data.results.length})` : '');
+          document.getElementById('resTime').textContent = report.timestamp;
+          document.getElementById('mScore').textContent = report.ats_score + "%";
+          document.getElementById('mSim').textContent = report.similarity + "%";
+          document.getElementById('mSkill').textContent = report.skill_score + "%";
+          document.getElementById('mSec').textContent = report.sec_score + "%";
 
           const matchBox = document.getElementById('matchedTags');
-          matchBox.innerHTML = data.matched_skills.length 
-            ? data.matched_skills.map(s => `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
+          matchBox.innerHTML = report.matched_skills.length 
+            ? report.matched_skills.map(s => `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
             : '<span class="text-xs text-slate-400">No direct matches detected.</span>';
 
           const missBox = document.getElementById('missingTags');
-          missBox.innerHTML = data.missing_skills.length
-            ? data.missing_skills.map(s => `<span class="bg-rose-50 text-rose-700 border border-rose-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
+          missBox.innerHTML = report.missing_skills.length
+            ? report.missing_skills.map(s => `<span class="bg-rose-50 text-rose-700 border border-rose-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
             : '<span class="text-xs text-emerald-600 font-medium">All target skills detected in resume.</span>';
 
           const secBox = document.getElementById('sectionAudit');
-          secBox.innerHTML = Object.entries(data.sections).map(([sec, found]) => `
+          secBox.innerHTML = Object.entries(report.sections).map(([sec, found]) => `
             <div class="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-none">
               <span class="text-slate-600 font-medium">${sec}</span>
               <span class="${found ? 'text-emerald-600' : 'text-rose-500'} font-bold text-xs">${found ? '✓ Detected' : '✗ Missing'}</span>
@@ -349,17 +359,6 @@
         submitBtn.textContent = "🚀 Run Comprehensive ATS Evaluation";
       }
     });
-function loadSampleData() {
-    const sampleJD = "Looking for a Junior Software Engineer with hands-on proficiency in Python, Flask, SQL, and REST APIs. Familiarity with Git, Docker, Data Structures, and scikit-learn for machine learning tasks is preferred. Must possess good debugging and communication skills.";
-    const jdField = document.getElementById("jdInput");
-    if (jdField) {
-        jdField.value = sampleJD;
-        const wordCount = document.getElementById("jdWordCount");
-        if (wordCount) {
-            wordCount.innerText = sampleJD.trim().split(/\s+/).length + " words";
-        }
-    }
-}  
   </script>
 </body>
 </html>
