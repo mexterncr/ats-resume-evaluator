@@ -8,9 +8,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 import os
 import random
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
 from datetime import datetime, timedelta
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
@@ -22,7 +20,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ================= CREDENTIALS CONFIGURATION ================= #
 SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "huzaifayhchannel@gmail.com")
-SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "1063711450384-jqhqdt2igs7eldt2ldsms9ug55skrj4g.apps.googleusercontent.com")
 # ============================================================= #
 
@@ -104,43 +102,44 @@ def extract_file_content(file):
     return extracted_text
 
 def send_real_email_otp(recipient_email, otp_code, purpose):
-    clean_password = (SMTP_PASSWORD or "").strip()
-    if not clean_password:
-        print(f"\n[Notice]: SMTP_PASSWORD environment variable not configured.")
+    clean_key = (BREVO_API_KEY or "").strip()
+    if not clean_key:
+        print(f"\n[Notice]: BREVO_API_KEY not configured.")
         print(f"[Verification Code for {recipient_email}]: >>> {otp_code} <<<\n")
-        return False, "SMTP configuration pending"
+        return False, "BREVO_API_KEY pending"
 
-    subject = f"SkillSync AI — Verification Code: {otp_code}"
-    body = f"""Hello,
-
-Your 6-digit verification code for SkillSync AI ({purpose.upper()}) is:
-
-======================
-        {otp_code}
-======================
-
-This code is valid for 10 minutes. If you did not request this, please ignore this email.
-
-Best regards,
-SkillSync AI Security Team
-"""
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": clean_key,
+        "content-type": "application/json"
+    }
+    payload = {
+        "sender": {"name": "SkillSync AI", "email": SMTP_EMAIL},
+        "to": [{"email": recipient_email}],
+        "subject": f"SkillSync AI — Verification Code: {otp_code}",
+        "htmlContent": f"""
+            <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; rounded: 12px;">
+              <h2 style="color: #2563eb; margin-bottom: 8px;">SkillSync AI Verification</h2>
+              <p style="font-size: 14px; color: #475569;">Use the following 6-digit verification code to complete your {purpose} request:</p>
+              <div style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1e293b; background-color: #f1f5f9; padding: 14px; text-align: center; border-radius: 8px; margin: 20px 0;">
+                {otp_code}
+              </div>
+              <p style="font-size: 12px; color: #94a3b8;">This code is valid for 10 minutes. If you did not request this, you can safely ignore this email.</p>
+            </div>
+        """
+    }
 
     try:
-        msg = MIMEMultipart()
-        msg['From'] = f"SkillSync AI <{SMTP_EMAIL}>"
-        msg['To'] = recipient_email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
-
-        # Render Cloud server ke liye SSL Port 465 with 10s strict timeout
-        server = smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=10)
-        server.login(SMTP_EMAIL, clean_password)
-        server.sendmail(SMTP_EMAIL, recipient_email, msg.as_string())
-        server.quit()
-        return True, "Email sent successfully."
+        response = requests.post(url, json=payload, headers=headers, timeout=10)
+        if response.status_code in [200, 201, 202]:
+            print(f"[Brevo Success]: Code delivered to {recipient_email}")
+            return True, "Email sent successfully."
+        else:
+            print(f"[Brevo API Error]: {response.text}")
+            return False, response.text
     except Exception as e:
-        print(f"\n[SMTP Dispatch Issue]: {str(e)}")
-        print(f"[Security Code Generated for {recipient_email}]: >>> {otp_code} <<<\n")
+        print(f"[Brevo Connection Exception]: {str(e)}")
         return False, str(e)
 
 @app.route('/')
@@ -185,13 +184,12 @@ def send_otp():
 
     email_sent, _ = send_real_email_otp(email, code, purpose)
 
-    # Cloud par email send hone ya fail hone par bhi UI crash nahi hogi
     if email_sent:
         return jsonify({'success': True, 'message': f'Verification code sent to {email}. Check your inbox!'})
     else:
         return jsonify({
             'success': True,
-            'message': f'Code generated! Please check {email} inbox/spam folder (or Render server logs).'
+            'message': f'Verification code dispatched to {email}. Please check your inbox or spam folder!'
         })
 
 @app.route('/api/auth/verify-register', methods=['POST'])
