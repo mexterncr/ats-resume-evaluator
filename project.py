@@ -29,42 +29,6 @@ def clean_text(text):
     text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
     return re.sub(r'\s+', ' ', text).strip()
 
-def evaluate_single_resume(resume_text, clean_jd, filename):
-    clean_res = clean_text(resume_text)
-
-    # 1. TF-IDF & Cosine Similarity
-    vectorizer = TfidfVectorizer(stop_words='english')
-    tfidf_matrix = vectorizer.fit_transform([clean_jd, clean_res])
-    similarity = round(float(cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]) * 100, 1)
-
-    # 2. Sections
-    sections = {}
-    for name, kws in SECTIONS_TO_CHECK.items():
-        sections[name] = any(re.search(rf"\b{kw}\b", clean_res) for kw in kws)
-    sec_score = round((sum(sections.values()) / len(sections)) * 100, 1)
-
-    # 3. Skills
-    jd_skills = {s for s in TECH_SKILLS_DB if re.search(rf"\b{re.escape(s)}\b", clean_jd)}
-    res_skills = {s for s in TECH_SKILLS_DB if re.search(rf"\b{re.escape(s)}\b", clean_res)}
-    
-    matched = sorted(list(jd_skills.intersection(res_skills)))
-    missing = sorted(list(jd_skills.difference(res_skills)))
-    skill_score = round((len(matched) / len(jd_skills) * 100), 1) if jd_skills else 100.0
-
-    ats_score = round((similarity * 0.40) + (skill_score * 0.40) + (sec_score * 0.20), 1)
-
-    return {
-        'filename': filename,
-        'timestamp': datetime.now().strftime('%d %b %Y, %I:%M %p'),
-        'ats_score': ats_score,
-        'similarity': similarity,
-        'skill_score': skill_score,
-        'sec_score': sec_score,
-        'matched_skills': matched,
-        'missing_skills': missing,
-        'sections': sections
-    }
-
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -79,7 +43,7 @@ def analyze():
         return jsonify({'error': 'Job Description paste karna zaroori hai.'}), 400
 
     clean_jd = clean_text(job_desc)
-    results = []
+    resumes_data = []
 
     if is_demo:
         demo_text = """
@@ -89,35 +53,70 @@ def analyze():
         Projects: AI Resume ATS Evaluator using Python NLP, Web Inventory System using Node.js and SQL.
         Certifications: Python Data Science.
         """
-        results.append(evaluate_single_resume(demo_text, clean_jd, "Sample_CS_Resume.pdf"))
+        resumes_data.append(("Sample_CS_Resume.pdf", demo_text))
     else:
         valid_files = [f for f in resume_files if f and f.filename.endswith('.pdf')]
         if not valid_files:
-            return jsonify({'error': 'Kam se kam ek valid PDF resume upload karein.'}), 400
+            return jsonify({'error': 'PDF resume upload karein.'}), 400
 
         for file in valid_files:
             try:
                 reader = PdfReader(file)
                 text = ""
                 for page in reader.pages:
-                    extracted = page.extract_text()
-                    if extracted:
-                        text += extracted + " "
-                
-                results.append(evaluate_single_resume(text, clean_jd, file.filename))
+                    txt = page.extract_text()
+                    if txt:
+                        text += txt + " "
+                resumes_data.append((file.filename, text))
             except Exception:
                 continue
 
-        if not results:
+        if not resumes_data:
             return jsonify({'error': 'PDF read karne me issue aaya.'}), 400
 
-    # Highest score wale resume ko top par rank karo
+    results = []
+    vectorizer = TfidfVectorizer(stop_words='english')
+
+    for fname, r_text in resumes_data:
+        clean_res = clean_text(r_text)
+
+        # 1. TF-IDF & Cosine Similarity
+        tfidf_matrix = vectorizer.fit_transform([clean_jd, clean_res])
+        similarity = round(float(cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]) * 100, 1)
+
+        # 2. Sections
+        sections = {}
+        for name, kws in SECTIONS_TO_CHECK.items():
+            sections[name] = any(re.search(rf"\b{kw}\b", clean_res) for kw in kws)
+        sec_score = round((sum(sections.values()) / len(sections)) * 100, 1)
+
+        # 3. Skills
+        jd_skills = {s for s in TECH_SKILLS_DB if re.search(rf"\b{re.escape(s)}\b", clean_jd)}
+        res_skills = {s for s in TECH_SKILLS_DB if re.search(rf"\b{re.escape(s)}\b", clean_res)}
+        
+        matched = sorted(list(jd_skills.intersection(res_skills)))
+        missing = sorted(list(jd_skills.difference(res_skills)))
+        skill_score = round((len(matched) / len(jd_skills) * 100), 1) if jd_skills else 100.0
+
+        ats_score = round((similarity * 0.40) + (skill_score * 0.40) + (sec_score * 0.20), 1)
+
+        results.append({
+            'filename': fname,
+            'timestamp': datetime.now().strftime('%d %b %Y, %I:%M %p'),
+            'ats_score': ats_score,
+            'similarity': similarity,
+            'skill_score': skill_score,
+            'sec_score': sec_score,
+            'matched_skills': matched,
+            'missing_skills': missing,
+            'sections': sections
+        })
+
+    # Sort results by highest score
     results = sorted(results, key=lambda x: x['ats_score'], reverse=True)
 
-    # Agar single file evaluate hui ho toh direct object return karega purane frontend ke sath compatibility ke liye
     if len(results) == 1:
         return jsonify(results[0])
-    
     return jsonify({'multiple': True, 'results': results})
 
 if __name__ == '__main__':
