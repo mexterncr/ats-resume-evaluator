@@ -29,45 +29,7 @@ def clean_text(text):
     text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
     return re.sub(r'\s+', ' ', text).strip()
 
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    job_desc = request.form.get('job_desc', '').strip()
-    resume_file = request.files.get('resume_file')
-    is_demo = request.form.get('is_demo') == 'true'
-
-    if not job_desc:
-        return jsonify({'error': 'Job Description paste karna zaroori hai.'}), 400
-
-    resume_text = ""
-    resume_filename = "Candidate_Resume.pdf"
-
-    if is_demo:
-        resume_filename = "Sample_CS_Resume.pdf"
-        resume_text = """
-        Mohammed CS Student. Email: student@email.com. Phone: +91 9876543210.
-        Education: Bachelor of Science in Computer Science, 2026.
-        Technical Skills: Python, SQL, C++, HTML, CSS, JavaScript, Flask, Git, GitHub, Machine Learning, Data Structures.
-        Projects: AI Resume ATS Evaluator using Python NLP, Web Inventory System using Node.js and SQL.
-        Certifications: Python Data Science.
-        """
-    elif resume_file and resume_file.filename.endswith('.pdf'):
-        resume_filename = resume_file.filename
-        try:
-            reader = PdfReader(resume_file)
-            for page in reader.pages:
-                txt = page.extract_text()
-                if txt:
-                    resume_text += txt + " "
-        except Exception as e:
-            return jsonify({'error': 'PDF read karne me issue aaya.'}), 400
-    else:
-        return jsonify({'error': 'PDF resume upload karein.'}), 400
-
-    clean_jd = clean_text(job_desc)
+def evaluate_single_resume(resume_text, clean_jd, filename):
     clean_res = clean_text(resume_text)
 
     # 1. TF-IDF & Cosine Similarity
@@ -91,8 +53,8 @@ def analyze():
 
     ats_score = round((similarity * 0.40) + (skill_score * 0.40) + (sec_score * 0.20), 1)
 
-    return jsonify({
-        'filename': resume_filename,
+    return {
+        'filename': filename,
         'timestamp': datetime.now().strftime('%d %b %Y, %I:%M %p'),
         'ats_score': ats_score,
         'similarity': similarity,
@@ -101,7 +63,62 @@ def analyze():
         'matched_skills': matched,
         'missing_skills': missing,
         'sections': sections
-    })
+    }
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    job_desc = request.form.get('job_desc', '').strip()
+    resume_files = request.files.getlist('resume_file')
+    is_demo = request.form.get('is_demo') == 'true'
+
+    if not job_desc:
+        return jsonify({'error': 'Job Description paste karna zaroori hai.'}), 400
+
+    clean_jd = clean_text(job_desc)
+    results = []
+
+    if is_demo:
+        demo_text = """
+        Mohammed CS Student. Email: student@email.com. Phone: +91 9876543210.
+        Education: Bachelor of Science in Computer Science, 2026.
+        Technical Skills: Python, SQL, C++, HTML, CSS, JavaScript, Flask, Git, GitHub, Machine Learning, Data Structures.
+        Projects: AI Resume ATS Evaluator using Python NLP, Web Inventory System using Node.js and SQL.
+        Certifications: Python Data Science.
+        """
+        results.append(evaluate_single_resume(demo_text, clean_jd, "Sample_CS_Resume.pdf"))
+    else:
+        valid_files = [f for f in resume_files if f and f.filename.endswith('.pdf')]
+        if not valid_files:
+            return jsonify({'error': 'Kam se kam ek valid PDF resume upload karein.'}), 400
+
+        for file in valid_files:
+            try:
+                reader = PdfReader(file)
+                text = ""
+                for page in reader.pages:
+                    extracted = page.extract_text()
+                    if extracted:
+                        text += extracted + " "
+                
+                results.append(evaluate_single_resume(text, clean_jd, file.filename))
+            except Exception:
+                continue
+
+        if not results:
+            return jsonify({'error': 'PDF read karne me issue aaya.'}), 400
+
+    # Highest score wale resume ko top par rank karo
+    results = sorted(results, key=lambda x: x['ats_score'], reverse=True)
+
+    # Agar single file evaluate hui ho toh direct object return karega purane frontend ke sath compatibility ke liye
+    if len(results) == 1:
+        return jsonify(results[0])
+    
+    return jsonify({'multiple': True, 'results': results})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
