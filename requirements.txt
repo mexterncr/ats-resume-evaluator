@@ -3,3 +3,6 @@ gunicorn
 pypdf
 scikit-learn
 python-docx
+flask-sqlalchemy
+google-auth
+requests
