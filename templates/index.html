@@ -6,14 +6,42 @@
   <title>SkillSync AI — ATS Intelligence & Resume Screener</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Export Libraries: SheetJS (Excel), jsPDF & AutoTable (PDF) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Print Optimization: Isolates the candidate evaluation report card */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #resultsCard, #resultsCard * {
+        visibility: visible;
+      }
+      #resultsCard {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: none;
+      }
+      #printBtn, #exportBtnGroup, #docExportBtn {
+        display: none !important;
+      }
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
 
-  <!-- Fixed Top Navbar with Working Anchors -->
+  <!-- Top Navbar -->
   <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
       <a href="#home" class="flex items-center space-x-3 cursor-pointer">
@@ -36,7 +64,7 @@
   <header id="home" class="pt-16 pb-12 bg-gradient-to-b from-white via-slate-50 to-slate-100 border-b border-slate-200">
     <div class="max-w-5xl mx-auto px-6 text-center">
       <div class="inline-flex items-center space-x-2 bg-blue-50 border border-blue-200 text-blue-700 px-3.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-6">
-        <span>Third Year CS Mini-Project</span> • <span>NLP Vector Engine Active</span>
+        <span>Enterprise AI Edition</span> • <span>NLP Vector Engine Active</span>
       </div>
       <h1 class="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
         Analyze Your Resume. <br><span class="text-blue-600">Maximize Your ATS Match Rate.</span>
@@ -55,14 +83,22 @@
   <main id="analyzer" class="max-w-6xl mx-auto px-6 py-12 flex-1 w-full">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 p-6 sm:p-8">
       
-      <div class="flex items-center justify-between pb-6 border-b border-slate-100 mb-6">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-slate-100 mb-6 gap-4">
         <div>
           <h2 class="text-xl font-bold text-slate-900">ATS Evaluation Workspace</h2>
-          <p class="text-xs text-slate-500 mt-1">Upload candidate resume (PDF) and target Job Description for mathematical vector parsing.</p>
+          <p class="text-xs text-slate-500 mt-1">Upload candidate resumes (PDF, DOCX, TXT) and target Job Description for vector screening.</p>
         </div>
-        <button id="demoBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg transition border border-slate-300 flex items-center gap-1.5">
-          <span>⚡</span> Preload Demo Data
-        </button>
+        <div class="flex items-center gap-3">
+          <select id="roleSelector" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">⚡ Select Preset Role JD</option>
+            <option value="software_engineer">Junior Software Engineer</option>
+            <option value="data_scientist">Data Scientist / ML Engineer</option>
+            <option value="frontend_dev">Frontend Web Developer</option>
+          </select>
+          <button id="demoBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg transition border border-slate-300 flex items-center gap-1.5">
+            <span>⚡</span> Demo Data
+          </button>
+        </div>
       </div>
 
       <form id="evalForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -76,14 +112,14 @@
         </div>
 
         <div>
-          <label class="block text-sm font-bold text-slate-700 mb-2">2. Upload Candidate Resume (PDF)</label>
+          <label class="block text-sm font-bold text-slate-700 mb-2">2. Upload Candidate Resume (PDF, DOCX, TXT)</label>
           <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer bg-slate-50/50 flex flex-col justify-center items-center h-[216px]" onclick="document.getElementById('resumeFile').click()">
             <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3">📄</div>
-            <p class="text-sm font-semibold text-slate-700" id="fileText">Click to browse or drop PDF resume</p>
-            <p class="text-xs text-slate-400 mt-1">Accepts multiple standard PDF documents up to 5 MB</p>
-            <input type="file" id="resumeFile" class="hidden" accept=".pdf" multiple>
+            <p class="text-sm font-semibold text-slate-700" id="fileText">Click to browse or drop resume documents</p>
+            <p class="text-xs text-slate-400 mt-1">Accepts multiple PDF, Word (.docx), or Text (.txt) files up to 5 MB</p>
+            <input type="file" id="resumeFile" class="hidden" accept=".pdf,.docx,.doc,.txt" multiple>
           </div>
-          <p class="text-xs text-slate-400 mt-2 px-1">Parsed using PyPDF text extraction stream</p>
+          <p class="text-xs text-slate-400 mt-2 px-1">Multi-format file stream extraction engine active</p>
         </div>
 
         <div class="md:col-span-2 pt-2">
@@ -96,18 +132,41 @@
       <!-- Results Dashboard Panel -->
       <div id="resultsCard" class="hidden mt-10 pt-8 border-t border-slate-200">
         
-        <!-- Batch Comparison Table (Multiple Resumes ke liye) -->
+        <!-- Batch Leaderboard Table -->
         <div id="batchTableCard" style="display: none;" class="mb-8 bg-slate-50 border border-slate-200 rounded-xl p-5">
-          <h4 class="font-bold text-sm text-slate-800 mb-3 flex items-center justify-between">
-            <span class="flex items-center gap-2">🏆 Candidates Leaderboard & Ranking</span>
-            <span class="text-xs font-normal text-slate-500">Sorted by Highest ATS Score</span>
-          </h4>
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+            <div>
+              <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                <span>🏆 Candidates Leaderboard & Ranking</span>
+              </h4>
+              <p class="text-[11px] text-slate-500">Click on any candidate row below to view their detailed audit report.</p>
+            </div>
+            
+            <!-- Multi-Format Batch Export Actions -->
+            <div id="exportBtnGroup" class="flex flex-wrap items-center gap-2">
+              <span class="text-[11px] font-semibold text-slate-400">Export:</span>
+              <button type="button" onclick="exportLeaderboardExcel()" class="bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition">
+                <span>📊</span> Excel (.xlsx)
+              </button>
+              <button type="button" onclick="exportLeaderboardPDF()" class="bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition">
+                <span>📑</span> PDF (.pdf)
+              </button>
+              <button type="button" onclick="exportLeaderboardCSV()" class="bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition">
+                <span>📥</span> CSV (.csv)
+              </button>
+              <button type="button" onclick="exportLeaderboardJSON()" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition">
+                <span>🔣</span> JSON
+              </button>
+            </div>
+          </div>
+          
           <div class="overflow-x-auto">
             <table class="w-full text-left text-xs text-slate-600">
               <thead class="bg-slate-200/70 text-slate-700 font-bold uppercase text-[10px]">
                 <tr>
                   <th class="p-2.5 rounded-l-lg">Rank</th>
                   <th class="p-2.5">Candidate Resume</th>
+                  <th class="p-2.5 text-center">Status</th>
                   <th class="p-2.5 text-center">ATS Score</th>
                   <th class="p-2.5 text-center">Similarity</th>
                   <th class="p-2.5 text-center">Skills</th>
@@ -119,15 +178,21 @@
           </div>
         </div>
 
-        <div class="flex items-center justify-between mb-6">
+        <!-- Candidate Detailed Audit Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
           <div>
-            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Evaluation Report</span>
+            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Candidate Detailed Audit</span>
             <h3 class="text-2xl font-extrabold text-slate-900" id="resFilename">Report</h3>
             <p class="text-xs text-slate-500" id="resTime"></p>
           </div>
-          <button onclick="window.print()" class="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-semibold px-3 py-2 rounded-lg">
-            🖨️ Print Report
-          </button>
+          <div class="flex items-center gap-2">
+            <button id="docExportBtn" onclick="exportCandidateDoc()" class="text-xs bg-white hover:bg-blue-50 border border-blue-300 text-blue-700 font-semibold px-3 py-2 rounded-lg flex items-center gap-1 transition shadow-sm">
+              <span>📄</span> Export Word (.doc)
+            </button>
+            <button id="printBtn" onclick="window.print()" class="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-semibold px-3 py-2 rounded-lg flex items-center gap-1 transition">
+              <span>🖨️</span> Print / Save PDF
+            </button>
+          </div>
         </div>
 
         <!-- 4 Metric Cards -->
@@ -135,7 +200,7 @@
           <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-4 text-center">
             <span class="text-xs font-bold text-blue-700 uppercase">Overall ATS Score</span>
             <div class="text-3xl font-extrabold text-blue-700 mono my-1" id="mScore">0%</div>
-            <span class="text-[11px] text-blue-600 font-medium">Weighted Pipeline</span>
+            <span id="mStatusBadge" class="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1"></span>
           </div>
           <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
             <span class="text-xs font-bold text-slate-500 uppercase">Semantic Similarity</span>
@@ -178,13 +243,13 @@
     </div>
   </main>
 
-  <!-- Platform Features Section (Anchored to Navbar) -->
+  <!-- Platform Features Section -->
   <section id="features" class="py-16 bg-white border-t border-slate-200">
     <div class="max-w-6xl mx-auto px-6">
       <div class="text-center max-w-2xl mx-auto mb-12">
         <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">Platform Capabilities</h2>
         <p class="text-3xl font-extrabold text-slate-900 mt-2">Comprehensive ATS Audit Suite</p>
-        <p class="text-slate-500 text-sm mt-2">Designed specifically as a Third Year Computer Science Mini-Project demonstrating applied NLP techniques.</p>
+        <p class="text-slate-500 text-sm mt-2">Enterprise-grade resume analysis driven by applied NLP algorithms and vector semantic search.</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -222,7 +287,7 @@
     </div>
   </section>
 
-  <!-- How It Works Section (Anchored to Navbar) -->
+  <!-- How It Works Section -->
   <section id="workflow" class="py-16 bg-slate-50 border-t border-slate-200">
     <div class="max-w-6xl mx-auto px-6">
       <div class="text-center max-w-2xl mx-auto mb-12">
@@ -234,7 +299,7 @@
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
           <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">1</div>
           <h4 class="font-bold text-slate-900 text-sm mb-2">Upload Resume</h4>
-          <p class="text-xs text-slate-600">Candidate supplies PDF document; text stream is extracted via PyPDF.</p>
+          <p class="text-xs text-slate-600">Candidate supplies PDF, DOCX, or TXT documents; text streams are parsed directly.</p>
         </div>
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
           <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">2</div>
@@ -244,7 +309,7 @@
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
           <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">3</div>
           <h4 class="font-bold text-slate-900 text-sm mb-2">NLP Vectorization</h4>
-          <p class="text-xs text-slate-600">Stopwords are eliminated, tokens regularized, and TF-IDF matrix generated.</p>
+          <p class="text-xs text-slate-600">Stopwords are eliminated, tokens regularized, and TF-IDF bi-gram matrix generated.</p>
         </div>
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
           <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">4</div>
@@ -255,19 +320,19 @@
     </div>
   </section>
 
-  <!-- About / NLP Architecture Section (Anchored to Navbar) -->
+  <!-- NLP Architecture Section -->
   <section id="about" class="py-16 bg-white border-t border-slate-200">
     <div class="max-w-4xl mx-auto px-6 text-center">
-      <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">Academic Context</h2>
+      <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">System Engine</h2>
       <h3 class="text-2xl font-bold text-slate-900 mt-2">Natural Language Processing Pipeline</h3>
       <p class="text-sm text-slate-600 mt-4 leading-relaxed">
-        This project was developed for the Third Year Computer Science curriculum. It demonstrates the real-world application of tokenization, regular expression-based pattern parsing, TF-IDF (Term Frequency-Inverse Document Frequency) weights, and Cosine Vector Space angles to solve the industry challenge of automated candidate evaluation.
+        Engineered for high-precision screening. Demonstrates the real-world application of multi-document tokenization, bi-gram n-gram vectorization, regular expression parsing, TF-IDF weights, and Cosine Vector Space angles to solve automated candidate evaluation.
       </p>
       <div class="mt-8 flex justify-center gap-3 text-xs font-semibold text-slate-600">
         <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Python 3</span>
         <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Flask Microframework</span>
         <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Scikit-Learn</span>
-        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">PyPDF</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">PyPDF & python-docx</span>
         <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">Tailwind CSS</span>
       </div>
     </div>
@@ -275,29 +340,49 @@
 
   <!-- Footer -->
   <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-auto text-xs text-center">
-    <p>© 2026 SkillSync AI • Third Year Computer Science Mini-Project • All Rights Reserved</p>
+    <p>© 2026 SkillSync AI • Enterprise Resume Evaluation System • All Rights Reserved</p>
   </footer>
 
-  <!-- Script Wiring Logic -->
+  <!-- Script Logic -->
   <script>
     let isDemoMode = false;
+    let globalBatchResults = [];
+    let currentActiveIndex = 0;
+
     const resumeFileInput = document.getElementById('resumeFile');
     const fileText = document.getElementById('fileText');
     const jdInput = document.getElementById('jdInput');
     const jdWordCount = document.getElementById('jdWordCount');
     const demoBtn = document.getElementById('demoBtn');
+    const roleSelector = document.getElementById('roleSelector');
     const evalForm = document.getElementById('evalForm');
     const submitBtn = document.getElementById('submitBtn');
     const resultsCard = document.getElementById('resultsCard');
 
-    jdInput.addEventListener('input', () => {
+    const PRESET_ROLES = {
+      software_engineer: "Looking for a Junior Software Engineer with hands-on proficiency in Python, Flask, SQL, and REST APIs. Candidate should know Git version control, Docker fundamentals, and basic Data Structures. Experience with machine learning or scikit-learn is a plus.",
+      data_scientist: "Seeking a Data Scientist with expertise in Python, SQL, Machine Learning, Deep Learning, Pandas, and NumPy. Familiarity with PyTorch, TensorFlow, Scikit-Learn, and NLP pipelines is required. Experience with data structures and Docker is preferred.",
+      frontend_dev: "Hiring a Frontend Web Developer with solid foundations in HTML, CSS, JavaScript, TypeScript, React, and Vue. Must have good understanding of REST APIs, Git, responsive design, and state management."
+    };
+
+    roleSelector.addEventListener('change', (e) => {
+      const selected = PRESET_ROLES[e.target.value];
+      if (selected) {
+        jdInput.value = selected;
+        updateWordCount();
+      }
+    });
+
+    function updateWordCount() {
       const words = jdInput.value.trim() ? jdInput.value.trim().split(/\s+/).length : 0;
       jdWordCount.textContent = words + " words";
-    });
+    }
+
+    jdInput.addEventListener('input', updateWordCount);
 
     resumeFileInput.addEventListener('change', () => {
       if (resumeFileInput.files.length > 1) {
-        fileText.textContent = `✓ ${resumeFileInput.files.length} Resumes Selected`;
+        fileText.textContent = `✓ ${resumeFileInput.files.length} Documents Selected`;
         isDemoMode = false;
       } else if (resumeFileInput.files.length === 1) {
         fileText.textContent = "✓ " + resumeFileInput.files[0].name;
@@ -308,10 +393,214 @@
     demoBtn.addEventListener('click', () => {
       isDemoMode = true;
       resumeFileInput.value = "";
-      jdInput.value = "Looking for a Junior Software Engineer with hands-on proficiency in Python, Flask, SQL, and REST APIs. Candidate should know Git version control, Docker fundamentals, and basic Data Structures. Experience with machine learning or scikit-learn is a plus.";
-      jdWordCount.textContent = jdInput.value.split(/\s+/).length + " words";
+      jdInput.value = PRESET_ROLES.software_engineer;
+      updateWordCount();
       fileText.textContent = "⚡ Sample_CS_Resume.pdf (Preloaded Demo)";
     });
+
+    function getBadgeHTML(status) {
+      if (status === "Shortlisted") {
+        return '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">✓ Shortlisted</span>';
+      } else if (status === "Potential Match" || status === "Under Review") {
+        return '<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-amber-300">⚡ Potential Match</span>';
+      } else {
+        return '<span class="bg-rose-100 text-rose-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-rose-300">✗ Rejected</span>';
+      }
+    }
+
+    function renderCandidateDetails(index) {
+      currentActiveIndex = index;
+      const report = globalBatchResults[index];
+      if (!report) return;
+
+      document.getElementById('resFilename').textContent = report.filename + ` (Candidate #${index + 1})`;
+      document.getElementById('resTime').textContent = report.timestamp;
+      document.getElementById('mScore').textContent = report.ats_score + "%";
+      document.getElementById('mSim').textContent = report.similarity + "%";
+      document.getElementById('mSkill').textContent = report.skill_score + "%";
+      document.getElementById('mSec').textContent = report.sec_score + "%";
+
+      const badge = document.getElementById('mStatusBadge');
+      if (report.status === "Shortlisted") {
+        badge.className = "inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full mt-1 bg-emerald-100 text-emerald-800 border border-emerald-300";
+        badge.textContent = "✓ Shortlisted";
+      } else if (report.status === "Potential Match" || report.status === "Under Review") {
+        badge.className = "inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full mt-1 bg-amber-100 text-amber-800 border border-amber-300";
+        badge.textContent = "⚡ Potential Match";
+      } else {
+        badge.className = "inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full mt-1 bg-rose-100 text-rose-800 border border-rose-300";
+        badge.textContent = "✗ Rejected";
+      }
+
+      const matchBox = document.getElementById('matchedTags');
+      matchBox.innerHTML = report.matched_skills.length 
+        ? report.matched_skills.map(s => `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
+        : '<span class="text-xs text-slate-400">No direct matches detected.</span>';
+
+      const missBox = document.getElementById('missingTags');
+      missBox.innerHTML = report.missing_skills.length
+        ? report.missing_skills.map(s => `<span class="bg-rose-50 text-rose-700 border border-rose-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
+        : '<span class="text-xs text-emerald-600 font-medium">All target skills detected in resume.</span>';
+
+      const secBox = document.getElementById('sectionAudit');
+      secBox.innerHTML = Object.entries(report.sections).map(([sec, found]) => `
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-none">
+          <span class="text-slate-600 font-medium">${sec}</span>
+          <span class="${found ? 'text-emerald-600' : 'text-rose-500'} font-bold text-xs">${found ? '✓ Detected' : '✗ Missing'}</span>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('#batchTableBody tr').forEach((tr, i) => {
+        if (i === index) {
+          tr.classList.add('bg-blue-100/70', 'ring-1', 'ring-blue-400');
+        } else {
+          tr.classList.remove('bg-blue-100/70', 'ring-1', 'ring-blue-400');
+        }
+      });
+    }
+
+    /* ======================================================
+       MULTI-FORMAT EXPORT ENGINE (Excel, PDF, CSV, JSON, DOC)
+       ====================================================== */
+
+    // 1. Export Leaderboard to Microsoft Excel (.xlsx)
+    function exportLeaderboardExcel() {
+      if (!globalBatchResults.length) return;
+      const dataRows = globalBatchResults.map((r, i) => ({
+        "Rank": i + 1,
+        "Candidate Resume": r.filename,
+        "Status": r.status,
+        "ATS Score (%)": r.ats_score,
+        "Similarity (%)": r.similarity,
+        "Skills Match (%)": r.skill_score,
+        "Section Audit (%)": r.sec_score,
+        "Matched Skills": r.matched_skills.join(", "),
+        "Missing Skills": r.missing_skills.join(", "),
+        "Timestamp": r.timestamp
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(dataRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "ATS Leaderboard");
+      XLSX.writeFile(workbook, `SkillSync_Leaderboard_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    // 2. Export Leaderboard to Formatted PDF (.pdf)
+    function exportLeaderboardPDF() {
+      if (!globalBatchResults.length) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'pt', 'a4');
+
+      doc.setFontSize(16);
+      doc.setTextColor(30, 41, 59);
+      doc.text("SkillSync AI — Candidate ATS Leaderboard Report", 40, 45);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Generated on: ${new Date().toLocaleString()} | Evaluated Candidates: ${globalBatchResults.length}`, 40, 62);
+
+      const tableData = globalBatchResults.map((r, i) => [
+        `#${i + 1}`,
+        r.filename,
+        r.status,
+        `${r.ats_score}%`,
+        `${r.similarity}%`,
+        `${r.skill_score}%`,
+        `${r.sec_score}%`
+      ]);
+
+      doc.autoTable({
+        startY: 75,
+        head: [['Rank', 'Candidate Resume', 'Status', 'ATS Score', 'Similarity', 'Skills', 'Sections']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 8, cellPadding: 6 }
+      });
+
+      doc.save(`SkillSync_Leaderboard_${new Date().toISOString().slice(0,10)}.pdf`);
+    }
+
+    // 3. Export Leaderboard to CSV (.csv)
+    function exportLeaderboardCSV() {
+      if (!globalBatchResults.length) return;
+      let csvContent = "data:text/csv;charset=utf-8,Rank,Candidate Resume,Status,ATS Score,Semantic Similarity,Skills Match,Section Score\n";
+      globalBatchResults.forEach((res, idx) => {
+        csvContent += `${idx + 1},"${res.filename}",${res.status},${res.ats_score}%,${res.similarity}%,${res.skill_score}%,${res.sec_score}%\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `SkillSync_Leaderboard_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // 4. Export Batch Data to JSON (.json)
+    function exportLeaderboardJSON() {
+      if (!globalBatchResults.length) return;
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(globalBatchResults, null, 2));
+      const link = document.createElement("a");
+      link.setAttribute("href", dataStr);
+      link.setAttribute("download", `SkillSync_Audit_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // 5. Export Active Candidate Individual Audit to Microsoft Word (.doc)
+    function exportCandidateDoc() {
+      const report = globalBatchResults[currentActiveIndex];
+      if (!report) return;
+
+      const htmlContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>ATS Evaluation Audit</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #1e293b; }
+          h1 { color: #2563eb; }
+          .badge { font-weight: bold; padding: 4px 8px; border-radius: 4px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+          th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+          th { background-color: #f1f5f9; }
+        </style>
+        </head>
+        <body>
+          <h1>SkillSync AI — Candidate Audit Report</h1>
+          <p><strong>Candidate File:</strong> ${report.filename}</p>
+          <p><strong>Audit Timestamp:</strong> ${report.timestamp}</p>
+          <p><strong>Decision Status:</strong> ${report.status}</p>
+          <hr/>
+          <h3>Performance Metrics</h3>
+          <table>
+            <tr><th>Metric</th><th>Score</th></tr>
+            <tr><td>Overall ATS Score</td><td><b>${report.ats_score}%</b></td></tr>
+            <tr><td>Semantic Similarity (TF-IDF Cosine)</td><td>${report.similarity}%</td></tr>
+            <tr><td>Target Technical Skills Match</td><td>${report.skill_score}%</td></tr>
+            <tr><td>Structural Section Formatting</td><td>${report.sec_score}%</td></tr>
+          </table>
+          <h3>Domain Skills Breakdown</h3>
+          <p><b>Matched Skills:</b> ${report.matched_skills.join(', ') || 'None detected'}</p>
+          <p><b>Missing Target Skills:</b> ${report.missing_skills.join(', ') || 'None (100% matched)'}</p>
+          <h3>Structural Sections Audit</h3>
+          <ul>
+            ${Object.entries(report.sections).map(([sec, found]) => `<li><b>${sec}:</b>${found ? 'Detected' : 'Missing'}</li>`).join('')}
+          </ul>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${report.filename.replace(/\.[^/.]+$/, "")}_ATS_Audit.doc`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
 
     evalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -319,11 +608,11 @@
       const files = resumeFileInput.files;
 
       if (!jd) {
-        alert("Pehle Job Description paste karein.");
+        alert("Please provide a target Job Description before submitting.");
         return;
       }
       if (files.length === 0 && !isDemoMode) {
-        alert("Pehle resume PDF upload karein ya 'Preload Demo Data' par click karein.");
+        alert("Please upload at least one resume document (.PDF, .DOCX, or .TXT) or use Demo Data.");
         return;
       }
 
@@ -344,19 +633,19 @@
         const data = await response.json();
 
         if (response.ok) {
-          const isBatch = Boolean(data.results && data.results.length > 1);
-          const report = data.multiple ? data.results[0] : data;
+          globalBatchResults = data.results || [data];
+          const isBatch = globalBatchResults.length > 1;
 
-          // Multi-Resume Leaderboard Table Populator
           const batchTableCard = document.getElementById('batchTableCard');
           const batchTableBody = document.getElementById('batchTableBody');
           
           if (batchTableCard && batchTableBody) {
             if (isBatch) {
-              batchTableBody.innerHTML = data.results.map((res, idx) => `
-                <tr class="${idx === 0 ? 'bg-blue-100/60 font-semibold text-blue-900' : 'hover:bg-slate-100/70'}">
+              batchTableBody.innerHTML = globalBatchResults.map((res, idx) => `
+                <tr onclick="renderCandidateDetails(${idx})" class="cursor-pointer hover:bg-blue-50/50 transition-colors ${idx === 0 ? 'bg-blue-100/70 ring-1 ring-blue-400 font-semibold' : ''}">
                   <td class="p-3 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#${idx+1}`))}</td>
                   <td class="p-3 font-medium text-slate-800">${res.filename}</td>
+                  <td class="p-3 text-center">${getBadgeHTML(res.status)}</td>
                   <td class="p-3 text-center font-extrabold text-blue-600">${res.ats_score}%</td>
                   <td class="p-3 text-center text-slate-600">${res.similarity}%</td>
                   <td class="p-3 text-center text-slate-600">${res.skill_score}%</td>
@@ -369,30 +658,7 @@
             }
           }
 
-          document.getElementById('resFilename').textContent = report.filename + (isBatch ? ` (Rank #1 of ${data.results.length})` : '');
-          document.getElementById('resTime').textContent = report.timestamp;
-          document.getElementById('mScore').textContent = report.ats_score + "%";
-          document.getElementById('mSim').textContent = report.similarity + "%";
-          document.getElementById('mSkill').textContent = report.skill_score + "%";
-          document.getElementById('mSec').textContent = report.sec_score + "%";
-
-          const matchBox = document.getElementById('matchedTags');
-          matchBox.innerHTML = report.matched_skills.length 
-            ? report.matched_skills.map(s => `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
-            : '<span class="text-xs text-slate-400">No direct matches detected.</span>';
-
-          const missBox = document.getElementById('missingTags');
-          missBox.innerHTML = report.missing_skills.length
-            ? report.missing_skills.map(s => `<span class="bg-rose-50 text-rose-700 border border-rose-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
-            : '<span class="text-xs text-emerald-600 font-medium">All target skills detected in resume.</span>';
-
-          const secBox = document.getElementById('sectionAudit');
-          secBox.innerHTML = Object.entries(report.sections).map(([sec, found]) => `
-            <div class="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-none">
-              <span class="text-slate-600 font-medium">${sec}</span>
-              <span class="${found ? 'text-emerald-600' : 'text-rose-500'} font-bold text-xs">${found ? '✓ Detected' : '✗ Missing'}</span>
-            </div>
-          `).join('');
+          renderCandidateDetails(0);
 
           resultsCard.classList.remove('hidden');
           resultsCard.scrollIntoView({ behavior: 'smooth' });
