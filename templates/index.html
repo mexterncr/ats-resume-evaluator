@@ -95,6 +95,30 @@
 
       <!-- Results Dashboard Panel -->
       <div id="resultsCard" class="hidden mt-10 pt-8 border-t border-slate-200">
+        
+        <!-- Batch Comparison Table (Multiple Resumes ke liye) -->
+        <div id="batchTableCard" class="hidden mb-8 bg-slate-50 border border-slate-200 rounded-xl p-5">
+          <h4 class="font-bold text-sm text-slate-800 mb-3 flex items-center justify-between">
+            <span>🏆 Candidates Leaderboard & Ranking</span>
+            <span class="text-xs font-normal text-slate-500">Sorted by Highest ATS Score</span>
+          </h4>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-200/70 text-slate-700 font-bold uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5 rounded-l-lg">Rank</th>
+                  <th class="p-2.5">Candidate Resume</th>
+                  <th class="p-2.5 text-center">ATS Score</th>
+                  <th class="p-2.5 text-center">Similarity</th>
+                  <th class="p-2.5 text-center">Skills</th>
+                  <th class="p-2.5 text-center rounded-r-lg">Sections</th>
+                </tr>
+              </thead>
+              <tbody id="batchTableBody" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="flex items-center justify-between mb-6">
           <div>
             <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Evaluation Report</span>
@@ -320,9 +344,31 @@
         const data = await response.json();
 
         if (response.ok) {
+          const isBatch = data.multiple && data.results && data.results.length > 1;
           const report = data.multiple ? data.results[0] : data;
 
-          document.getElementById('resFilename').textContent = report.filename + (data.multiple ? ` (Rank #1 of ${data.results.length})` : '');
+          // Multi-Resume Leaderboard Table Populator
+          const batchTableCard = document.getElementById('batchTableCard');
+          const batchTableBody = document.getElementById('batchTableBody');
+          if (batchTableCard && batchTableBody) {
+            if (isBatch) {
+              batchTableBody.innerHTML = data.results.map((res, idx) => `
+                <tr class="${idx === 0 ? 'bg-blue-50/70 font-semibold text-blue-900' : 'hover:bg-slate-100/50'}">
+                  <td class="p-2.5 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#${idx+1}`))}</td>
+                  <td class="p-2.5 truncate max-w-[220px]">${res.filename}</td>
+                  <td class="p-2.5 text-center font-bold text-blue-700">${res.ats_score}%</td>
+                  <td class="p-2.5 text-center">${res.similarity}%</td>
+                  <td class="p-2.5 text-center">${res.skill_score}%</td>
+                  <td class="p-2.5 text-center">${res.sec_score}%</td>
+                </tr>
+              `).join('');
+              batchTableCard.classList.remove('hidden');
+            } else {
+              batchTableCard.classList.add('hidden');
+            }
+          }
+
+          document.getElementById('resFilename').textContent = report.filename + (isBatch ? ` (Top Match of ${data.results.length})` : '');
           document.getElementById('resTime').textContent = report.timestamp;
           document.getElementById('mScore').textContent = report.ats_score + "%";
           document.getElementById('mSim').textContent = report.similarity + "%";
