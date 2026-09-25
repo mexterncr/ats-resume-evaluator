@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, jsonify
 from pypdf import PdfReader
+import docx
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
@@ -24,10 +25,38 @@ SECTIONS_TO_CHECK = {
     "Certifications": [r"certifications", r"courses", r"achievements"]
 }
 
+SUPPORTED_EXTENSIONS = ('.pdf', '.docx', '.doc', '.txt')
+
 def clean_text(text):
     text = text.lower()
     text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
     return re.sub(r'\s+', ' ', text).strip()
+
+def extract_file_content(file):
+    filename = file.filename.lower()
+    extracted_text = ""
+    try:
+        if filename.endswith('.pdf'):
+            reader = PdfReader(file)
+            for page in reader.pages:
+                txt = page.extract_text()
+                if txt:
+                    extracted_text += txt + " "
+        elif filename.endswith(('.docx', '.doc')):
+            doc = docx.Document(file)
+            for para in doc.paragraphs:
+                if para.text:
+                    extracted_text += para.text + " "
+            for table in doc.tables:
+                for row in table.rows:
+                    for cell in row.cells:
+                        if cell.text:
+                            extracted_text += cell.text + " "
+        elif filename.endswith('.txt'):
+            extracted_text = file.read().decode('utf-8', errors='ignore')
+    except Exception:
+        return ""
+    return extracted_text
 
 @app.route('/')
 def home():
@@ -40,7 +69,7 @@ def analyze():
     is_demo = request.form.get('is_demo') == 'true'
 
     if not job_desc:
-        return jsonify({'error': 'Job Description paste karna zaroori hai.'}), 400
+        return jsonify({'error': 'Please provide a target Job Description to continue.'}), 400
 
     clean_jd = clean_text(job_desc)
     resumes_data = []
@@ -55,27 +84,20 @@ def analyze():
         """
         resumes_data.append(("Sample_CS_Resume.pdf", demo_text))
     else:
-        valid_files = [f for f in resume_files if f and f.filename.endswith('.pdf')]
+        valid_files = [f for f in resume_files if f and f.filename.lower().endswith(SUPPORTED_EXTENSIONS)]
         if not valid_files:
-            return jsonify({'error': 'PDF resume upload karein.'}), 400
+            return jsonify({'error': 'Please upload a valid resume file (.PDF, .DOCX, or .TXT).'}), 400
 
         for file in valid_files:
-            try:
-                reader = PdfReader(file)
-                text = ""
-                for page in reader.pages:
-                    txt = page.extract_text()
-                    if txt:
-                        text += txt + " "
+            text = extract_file_content(file)
+            if text.strip():
                 resumes_data.append((file.filename, text))
-            except Exception:
-                continue
 
         if not resumes_data:
-            return jsonify({'error': 'PDF read karne me issue aaya.'}), 400
+            return jsonify({'error': 'Unable to parse text from the uploaded document(s). Please verify file permissions.'}), 400
 
     results = []
-    vectorizer = TfidfVectorizer(stop_words='english')
+    vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
 
     for fname, r_text in resumes_data:
         clean_res = clean_text(r_text)
@@ -100,10 +122,19 @@ def analyze():
 
         ats_score = round((similarity * 0.40) + (skill_score * 0.40) + (sec_score * 0.20), 1)
 
+        # Real-World HR Cutoffs
+        if ats_score >= 60.0:
+            status = "Shortlisted"
+        elif ats_score >= 45.0:
+            status = "Potential Match"
+        else:
+            status = "Rejected"
+
         results.append({
             'filename': fname,
             'timestamp': datetime.now().strftime('%d %b %Y, %I:%M %p'),
             'ats_score': ats_score,
+            'status': status,
             'similarity': similarity,
             'skill_score': skill_score,
             'sec_score': sec_score,
@@ -112,7 +143,6 @@ def analyze():
             'sections': sections
         })
 
-    # Sort results by highest score
     results = sorted(results, key=lambda x: x['ats_score'], reverse=True)
 
     if len(results) == 1:
