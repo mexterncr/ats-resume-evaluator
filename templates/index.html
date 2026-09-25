@@ -81,7 +81,7 @@
             <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3">📄</div>
             <p class="text-sm font-semibold text-slate-700" id="fileText">Click to browse or drop PDF resume</p>
             <p class="text-xs text-slate-400 mt-1">Accepts standard PDF documents up to 5 MB</p>
-            <input type="file" name="resumes" accept=".pdf" multiple required>
+            <input type="file" name="resume_file" id="resumeFile" accept=".pdf" multiple required>
           </div>
           <p class="text-xs text-slate-400 mt-2 px-1">Parsed using PyPDF text extraction stream</p>
         </div>
@@ -349,6 +349,17 @@
         submitBtn.textContent = "🚀 Run Comprehensive ATS Evaluation";
       }
     });
+function loadSampleData() {
+    const sampleJD = "Looking for a Junior Software Engineer with hands-on proficiency in Python, Flask, SQL, and REST APIs. Familiarity with Git, Docker, Data Structures, and scikit-learn for machine learning tasks is preferred. Must possess good debugging and communication skills.";
+    const jdField = document.getElementById("jdInput");
+    if (jdField) {
+        jdField.value = sampleJD;
+        const wordCount = document.getElementById("jdWordCount");
+        if (wordCount) {
+            wordCount.innerText = sampleJD.trim().split(/\s+/).length + " words";
+        }
+    }
+}  
   </script>
 </body>
 </html>
