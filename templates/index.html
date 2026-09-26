@@ -21,6 +21,14 @@
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .mono { font-family: 'JetBrains Mono', monospace; }
 
+    @keyframes slideInDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast-animate {
+      animation: slideInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
     @media print {
       body * { visibility: hidden; }
       #resultsCard, #resultsCard * { visibility: visible; }
@@ -38,6 +46,9 @@
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
+
+  <!-- Toast Notification Floating Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Top Navigation Bar -->
   <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
@@ -117,6 +128,16 @@
             <span>⚡</span> Demo Data
           </button>
         </div>
+      </div>
+
+      <!-- Inline Validation Banner -->
+      <div id="formInlineAlert" class="hidden mb-6 p-4 rounded-xl border border-rose-200 bg-rose-50 flex items-start gap-3 transition">
+        <span class="text-rose-600 text-base font-bold leading-none mt-0.5">⚠️</span>
+        <div class="flex-1">
+          <h5 class="text-xs font-bold text-rose-800 uppercase tracking-wider">Submission Requirement Missing</h5>
+          <p id="formInlineAlertText" class="text-xs text-rose-700 mt-0.5 font-medium"></p>
+        </div>
+        <button onclick="document.getElementById('formInlineAlert').classList.add('hidden')" class="text-rose-400 hover:text-rose-600 text-xs font-bold">✕</button>
       </div>
 
       <form id="evalForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -358,9 +379,22 @@
     </div>
   </section>
 
-  <!-- Footer -->
-  <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-auto text-xs text-center">
-    <p>© 2026 SkillSync AI • Enterprise Resume Evaluation System • All Rights Reserved</p>
+  <!-- Footer with Live GitHub Repo Link -->
+  <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-auto text-xs">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <div class="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">⚡</div>
+        <p class="font-semibold text-slate-300">© 2026 SkillSync AI • Enterprise Resume Screener</p>
+      </div>
+      <div class="flex items-center gap-4 text-xs font-semibold">
+        <a href="https://github.com/mohammed-masiha/ats-resume-evaluator" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition shadow-sm">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          <span>GitHub Repository</span>
+        </a>
+        <span class="text-slate-600">•</span>
+        <span class="text-slate-500">MIT Open Source</span>
+      </div>
+    </div>
   </footer>
 
   <!-- ================= AUTHENTICATION MODAL ================= -->
@@ -478,6 +512,40 @@
 
     const EMAIL_REGEX = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
 
+    // Toast Notification Dispatcher
+    function showToast(message, type = 'error') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold toast-animate ${
+        type === 'error' ? 'bg-rose-900/90 text-white border-rose-700 backdrop-blur-md' : 'bg-slate-900/90 text-white border-slate-700 backdrop-blur-md'
+      }`;
+      toast.innerHTML = `
+        <span>${type === 'error' ? '⚠️' : '⚡'}</span>
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()" class="ml-2 text-slate-400 hover:text-white font-bold">✕</button>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.4s ease';
+        setTimeout(() => toast.remove(), 400);
+      }, 4000);
+    }
+
+    // Inline Alert Dispatcher
+    function showInlineAlert(message) {
+      const alertBox = document.getElementById('formInlineAlert');
+      const alertText = document.getElementById('formInlineAlertText');
+      alertText.textContent = message;
+      alertBox.classList.remove('hidden');
+      alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function hideInlineAlert() {
+      const alertBox = document.getElementById('formInlineAlert');
+      alertBox.classList.add('hidden');
+    }
+
     // Strict Client-Side Candidate Name Sanitizer
     function getCleanCandidateName(rawName, filename) {
       const NOISE_WORDS = [
@@ -489,7 +557,6 @@
 
       let candidateStr = (rawName || '').trim();
 
-      // Check if backend returned contaminated metadata
       let isContaminated = false;
       if (candidateStr) {
         let low = candidateStr.toLowerCase();
@@ -498,7 +565,6 @@
         }
       }
 
-      // Valid proper noun returned directly from document
       if (candidateStr && !isContaminated && candidateStr.toLowerCase() !== 'candidate') {
         let parts = candidateStr.split(/\s+/).filter(w => !NOISE_WORDS.includes(w.toLowerCase()));
         if (parts.length >= 2) {
@@ -506,7 +572,6 @@
         }
       }
 
-      // Clean fallback from filename tokens
       let base = (filename || 'Candidate').replace(/\.[^/.]+$/, '');
       base = base.replace(/\(\d+\)/g, '');
       let segments = base.split(/[-_]/);
@@ -541,6 +606,7 @@
       if (selected) {
         jdInput.value = selected;
         updateWordCount();
+        hideInlineAlert();
       }
     });
 
@@ -549,9 +615,13 @@
       jdWordCount.textContent = words + " words";
     }
 
-    jdInput.addEventListener('input', updateWordCount);
+    jdInput.addEventListener('input', () => {
+      updateWordCount();
+      hideInlineAlert();
+    });
 
     resumeFileInput.addEventListener('change', () => {
+      hideInlineAlert();
       if (resumeFileInput.files.length > 1) {
         fileText.textContent = `✓ ${resumeFileInput.files.length} Documents Selected`;
         isDemoMode = false;
@@ -562,11 +632,13 @@
     });
 
     demoBtn.addEventListener('click', () => {
+      hideInlineAlert();
       isDemoMode = true;
       resumeFileInput.value = "";
       jdInput.value = PRESET_ROLES.software_engineer;
       updateWordCount();
       fileText.textContent = "⚡ Sample_CS_Resume.pdf (Preloaded Demo)";
+      showToast("Demo datasets preloaded successfully.", "info");
     });
 
     async function checkAuthStatus() {
@@ -598,11 +670,12 @@
         if (res.ok) {
           closeAuthModal();
           checkAuthStatus();
+          showToast("Signed in via Google successfully.", "info");
         } else {
-          alert(data.error || "Google Sign-In failed.");
+          showToast(data.error || "Google Sign-In failed.");
         }
       } catch (err) {
-        alert("Google Authentication network error.");
+        showToast("Google Authentication network error.");
       }
     }
 
@@ -746,6 +819,7 @@
           if (res.ok) {
             closeAuthModal();
             checkAuthStatus();
+            showToast("Successfully logged in.", "info");
           } else {
             errBox.textContent = data.error || "Login failed.";
             errBox.classList.remove('hidden');
@@ -770,6 +844,7 @@
           if (res.ok) {
             closeAuthModal();
             checkAuthStatus();
+            showToast("Account successfully registered!", "info");
           } else {
             errBox.textContent = data.error || "Registration failed.";
             errBox.classList.remove('hidden');
@@ -809,6 +884,7 @@
     async function handleLogout() {
       await fetch('/api/auth/logout', { method: 'POST' });
       checkAuthStatus();
+      showToast("Logged out successfully.", "info");
     }
 
     async function openHistoryModal() {
@@ -843,7 +919,7 @@
         }
         modal.classList.remove('hidden');
       } catch (e) {
-        alert("Failed to load evaluation history.");
+        showToast("Failed to load evaluation history.");
       }
     }
 
@@ -1053,15 +1129,19 @@
 
     evalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      hideInlineAlert();
       const jd = jdInput.value.trim();
       const files = resumeFileInput.files;
 
       if (!jd) {
-        alert("Please provide a target Job Description before submitting.");
+        showInlineAlert("Please provide or select a target Job Description before submitting.");
+        showToast("Job Description is required.", "error");
+        jdInput.focus();
         return;
       }
       if (files.length === 0 && !isDemoMode) {
-        alert("Please upload at least one resume document (.PDF, .DOCX, or .TXT) or use Demo Data.");
+        showInlineAlert("Please upload candidate resume documents (.PDF, .DOCX, or .TXT) or click 'Demo Data'.");
+        showToast("Resume document(s) missing.", "error");
         return;
       }
 
@@ -1118,11 +1198,14 @@
 
           resultsCard.classList.remove('hidden');
           resultsCard.scrollIntoView({ behavior: 'smooth' });
+          showToast(`Evaluation complete for ${globalBatchResults.length} document(s).`, "info");
         } else {
-          alert(data.error || "Evaluation process error.");
+          showInlineAlert(data.error || "Evaluation process error.");
+          showToast(data.error || "Evaluation failed.", "error");
         }
       } catch (err) {
-        alert("Server communication failure: " + err.message);
+        showInlineAlert("Server communication failure: " + err.message);
+        showToast("Server connection error.", "error");
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = "🚀 Run Comprehensive ATS Evaluation";
