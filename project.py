@@ -24,6 +24,9 @@ BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "1063711450384-jqhqdt2igs7eldt2ldsms9ug55skrj4g.apps.googleusercontent.com")
 # ============================================================= #
 
+# Strict Email Format Validation Pattern
+EMAIL_REGEX = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$'
+
 db = SQLAlchemy(app)
 
 class User(db.Model):
@@ -106,7 +109,7 @@ def send_real_email_otp(recipient_email, otp_code, purpose):
     if not clean_key:
         print(f"\n[Notice]: BREVO_API_KEY not configured.")
         print(f"[Verification Code for {recipient_email}]: >>> {otp_code} <<<\n")
-        return False, "BREVO_API_KEY pending"
+        return False, "BREVO_API_KEY is not configured in server environment."
 
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
@@ -119,13 +122,13 @@ def send_real_email_otp(recipient_email, otp_code, purpose):
         "to": [{"email": recipient_email}],
         "subject": f"SkillSync AI — Verification Code: {otp_code}",
         "htmlContent": f"""
-            <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; rounded: 12px;">
+            <div style="font-family: Arial, sans-serif; padding: 24px; color: #1e293b; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px;">
               <h2 style="color: #2563eb; margin-bottom: 8px;">SkillSync AI Verification</h2>
               <p style="font-size: 14px; color: #475569;">Use the following 6-digit verification code to complete your {purpose} request:</p>
               <div style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1e293b; background-color: #f1f5f9; padding: 14px; text-align: center; border-radius: 8px; margin: 20px 0;">
                 {otp_code}
               </div>
-              <p style="font-size: 12px; color: #94a3b8;">This code is valid for 10 minutes. If you did not request this, you can safely ignore this email.</p>
+              <p style="font-size: 12px; color: #94a3b8;">This code is valid for 10 minutes. If you did not request this, please ignore.</p>
             </div>
         """
     }
@@ -137,10 +140,10 @@ def send_real_email_otp(recipient_email, otp_code, purpose):
             return True, "Email sent successfully."
         else:
             print(f"[Brevo API Error]: {response.text}")
-            return False, response.text
+            return False, "Email provider rejected the dispatch."
     except Exception as e:
         print(f"[Brevo Connection Exception]: {str(e)}")
-        return False, str(e)
+        return False, "Timeout connecting to mail server."
 
 @app.route('/')
 def home():
@@ -162,8 +165,9 @@ def send_otp():
     email = data.get('email', '').strip().lower()
     purpose = data.get('purpose', 'register')
 
-    if not email:
-        return jsonify({'error': 'Please enter a valid email address.'}), 400
+    # Strict Regex Check: user@domain.tld (e.g. .com, .in, .org, .edu)
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address (e.g. name@gmail.com).'}), 400
 
     user = User.query.filter_by(email=email).first()
     if purpose == 'register' and user and user.is_verified:
@@ -182,15 +186,12 @@ def send_otp():
     user.otp_expiry = expiry
     db.session.commit()
 
-    email_sent, _ = send_real_email_otp(email, code, purpose)
+    email_sent, err_msg = send_real_email_otp(email, code, purpose)
 
     if email_sent:
         return jsonify({'success': True, 'message': f'Verification code sent to {email}. Check your inbox!'})
     else:
-        return jsonify({
-            'success': True,
-            'message': f'Verification code dispatched to {email}. Please check your inbox or spam folder!'
-        })
+        return jsonify({'error': f'Failed to dispatch email: {err_msg}'}), 400
 
 @app.route('/api/auth/verify-register', methods=['POST'])
 def verify_register():
@@ -199,8 +200,10 @@ def verify_register():
     otp = data.get('otp', '').strip()
     password = data.get('password', '').strip()
 
-    if not email or not otp or not password:
-        return jsonify({'error': 'Email, OTP, and password are required.'}), 400
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address.'}), 400
+    if not otp or not password:
+        return jsonify({'error': 'OTP and password are required.'}), 400
     if len(password) < 6:
         return jsonify({'error': 'Password must be at least 6 characters.'}), 400
 
@@ -224,7 +227,9 @@ def reset_password():
     otp = data.get('otp', '').strip()
     new_password = data.get('new_password', '').strip()
 
-    if not email or not otp or not new_password:
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address.'}), 400
+    if not otp or not new_password:
         return jsonify({'error': 'All fields are required.'}), 400
     if len(new_password) < 6:
         return jsonify({'error': 'Password must be at least 6 characters.'}), 400
@@ -269,6 +274,9 @@ def login():
     data = request.get_json() or {}
     email = data.get('email', '').strip().lower()
     password = data.get('password', '').strip()
+
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address.'}), 400
 
     user = User.query.filter_by(email=email).first()
     if not user or not user.is_verified or not check_password_hash(user.password_hash, password):
