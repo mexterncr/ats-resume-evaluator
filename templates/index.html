@@ -98,7 +98,7 @@
   </header>
 
   <!-- Workspace Container -->
-  <main id="analyzer" class="max-w-6xl mx-auto px-4 sm:px-6 py-10 flex-1 w-full">
+  <main id="analyzer" class="max-w-7xl mx-auto px-4 sm:px-6 py-10 flex-1 w-full">
     <div class="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 p-5 sm:p-8">
       
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-slate-100 mb-6 gap-4">
@@ -150,7 +150,7 @@
       <!-- Results Dashboard Panel -->
       <div id="resultsCard" class="hidden mt-10 pt-8 border-t border-slate-200">
         
-        <!-- Batch Leaderboard Table -->
+        <!-- Batch Leaderboard Table with Candidate Name Column -->
         <div id="batchTableCard" style="display: none;" class="mb-8 bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
           <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-4 gap-3">
             <div>
@@ -182,7 +182,8 @@
               <thead class="bg-slate-200/70 text-slate-700 font-bold uppercase text-[10px]">
                 <tr>
                   <th class="p-2.5 rounded-l-lg">Rank</th>
-                  <th class="p-2.5">Candidate Resume</th>
+                  <th class="p-2.5">Candidate Name</th>
+                  <th class="p-2.5">Resume File</th>
                   <th class="p-2.5 text-center">Status</th>
                   <th class="p-2.5 text-center">ATS Score</th>
                   <th class="p-2.5 text-center">Similarity</th>
@@ -403,7 +404,6 @@
           </div>
         </div>
 
-        <!-- 6-Digit OTP Box (User enters from email) -->
         <div id="otpFieldContainer" class="hidden">
           <label class="block text-xs font-bold text-blue-700 uppercase mb-1">6-Digit Verification Code</label>
           <input type="text" id="authOtp" maxlength="6" class="w-full border border-blue-300 bg-blue-50/50 rounded-xl p-2.5 text-center text-base tracking-widest font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="••••••">
@@ -435,7 +435,7 @@
 
   <!-- ================= SCAN HISTORY MODAL ================= -->
   <div id="historyModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[85vh] flex flex-col">
+    <div class="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[85vh] flex flex-col">
       <div class="flex items-center justify-between pb-4 border-b border-slate-200">
         <div>
           <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -451,7 +451,8 @@
           <thead class="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold sticky top-0">
             <tr>
               <th class="p-2.5">Date & Time</th>
-              <th class="p-2.5">Candidate Document</th>
+              <th class="p-2.5">Candidate Name</th>
+              <th class="p-2.5">Resume File</th>
               <th class="p-2.5">Target Role</th>
               <th class="p-2.5 text-center">Status</th>
               <th class="p-2.5 text-center">ATS Score</th>
@@ -475,7 +476,6 @@
     let currentActiveIndex = 0;
     let currentAuthMode = 'login';
 
-    // RFC Standard Client-Side Email Regex Check (user@domain.tld)
     const EMAIL_REGEX = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
 
     const resumeFileInput = document.getElementById('resumeFile');
@@ -527,7 +527,6 @@
       fileText.textContent = "⚡ Sample_CS_Resume.pdf (Preloaded Demo)";
     });
 
-    // ---------------- AUTHENTICATION & GOOGLE / OTP ---------------- //
     async function checkAuthStatus() {
       try {
         const res = await fetch('/api/auth/status');
@@ -637,7 +636,6 @@
       errBox.classList.add('hidden');
       successBox.classList.add('hidden');
 
-      // Strict validation before dispatching to backend/Brevo
       if (!email || !EMAIL_REGEX.test(email)) {
         errBox.textContent = "Please enter a valid email address (e.g. name@gmail.com).";
         errBox.classList.remove('hidden');
@@ -786,7 +784,8 @@
           tbody.innerHTML = data.history.map(s => `
             <tr class="hover:bg-slate-50 transition">
               <td class="p-2.5 text-slate-400 whitespace-nowrap text-[11px]">${s.timestamp}</td>
-              <td class="p-2.5 font-semibold text-slate-800 truncate max-w-[200px]">${s.filename}</td>
+              <td class="p-2.5 font-bold text-slate-900">${s.candidate_name || 'Candidate'}</td>
+              <td class="p-2.5 font-medium text-slate-600 truncate max-w-[180px]">${s.filename}</td>
               <td class="p-2.5 text-slate-500">${s.role_title}</td>
               <td class="p-2.5 text-center">${getBadgeHTML(s.status)}</td>
               <td class="p-2.5 text-center font-bold text-blue-700">${s.ats_score}%</td>
@@ -807,7 +806,6 @@
       document.getElementById('historyModal').classList.add('hidden');
     }
 
-    // ---------------- REPORT & LEADERBOARD RENDERING ---------------- //
     function getBadgeHTML(status) {
       if (status === "Shortlisted") {
         return '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">✓ Shortlisted</span>';
@@ -823,7 +821,7 @@
       const report = globalBatchResults[index];
       if (!report) return;
 
-      document.getElementById('resFilename').textContent = report.filename + ` (Candidate #${index + 1})`;
+      document.getElementById('resFilename').textContent = `${report.candidate_name} — ${report.filename}`;
       document.getElementById('resTime').textContent = report.timestamp;
       document.getElementById('mScore').textContent = report.ats_score + "%";
       document.getElementById('mSim').textContent = report.similarity + "%";
@@ -869,12 +867,12 @@
       });
     }
 
-    // ---------------- MULTI-FORMAT EXPORTS ---------------- //
     function exportLeaderboardExcel() {
       if (!globalBatchResults.length) return;
       const dataRows = globalBatchResults.map((r, i) => ({
         "Rank": i + 1,
-        "Candidate Resume": r.filename,
+        "Candidate Name": r.candidate_name,
+        "Resume Document": r.filename,
         "Status": r.status,
         "ATS Score (%)": r.ats_score,
         "Similarity (%)": r.similarity,
@@ -903,6 +901,7 @@
 
       const tableData = globalBatchResults.map((r, i) => [
         `#${i + 1}`,
+        r.candidate_name,
         r.filename,
         r.status,
         `${r.ats_score}%`,
@@ -913,7 +912,7 @@
 
       doc.autoTable({
         startY: 75,
-        head: [['Rank', 'Candidate Resume', 'Status', 'ATS Score', 'Similarity', 'Skills', 'Sections']],
+        head: [['Rank', 'Candidate Name', 'Resume File', 'Status', 'ATS Score', 'Similarity', 'Skills', 'Sections']],
         body: tableData,
         theme: 'striped',
         headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
@@ -924,9 +923,9 @@
 
     function exportLeaderboardCSV() {
       if (!globalBatchResults.length) return;
-      let csvContent = "data:text/csv;charset=utf-8,Rank,Candidate Resume,Status,ATS Score,Semantic Similarity,Skills Match,Section Score\n";
+      let csvContent = "data:text/csv;charset=utf-8,Rank,Candidate Name,Resume File,Status,ATS Score,Semantic Similarity,Skills Match,Section Score\n";
       globalBatchResults.forEach((res, idx) => {
-        csvContent += `${idx + 1},"${res.filename}",${res.status},${res.ats_score}%,${res.similarity}%,${res.skill_score}%,${res.sec_score}%\n`;
+        csvContent += `${idx + 1},"${res.candidate_name}","${res.filename}",${res.status},${res.ats_score}%,${res.similarity}%,${res.skill_score}%,${res.sec_score}%\n`;
       });
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
@@ -965,6 +964,7 @@
         </head>
         <body>
           <h1>SkillSync AI — Candidate Audit Report</h1>
+          <p><strong>Candidate Name:</strong> ${report.candidate_name}</p>
           <p><strong>Candidate File:</strong> ${report.filename}</p>
           <p><strong>Audit Timestamp:</strong> ${report.timestamp}</p>
           <p><strong>Decision Status:</strong> ${report.status}</p>
@@ -999,7 +999,6 @@
       URL.revokeObjectURL(url);
     }
 
-    // ---------------- EVALUATION FORM SUBMISSION ---------------- //
     evalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const jd = jdInput.value.trim();
@@ -1044,7 +1043,8 @@
               batchTableBody.innerHTML = globalBatchResults.map((res, idx) => `
                 <tr onclick="renderCandidateDetails(${idx})" class="cursor-pointer hover:bg-blue-50/50 transition-colors ${idx === 0 ? 'bg-blue-100/70 ring-1 ring-blue-400 font-semibold' : ''}">
                   <td class="p-3 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#${idx+1}`))}</td>
-                  <td class="p-3 font-medium text-slate-800">${res.filename}</td>
+                  <td class="p-3 font-bold text-slate-900">${res.candidate_name}</td>
+                  <td class="p-3 font-medium text-slate-600 truncate max-w-[200px]">${res.filename}</td>
                   <td class="p-3 text-center">${getBadgeHTML(res.status)}</td>
                   <td class="p-3 text-center font-extrabold text-blue-600">${res.ats_score}%</td>
                   <td class="p-3 text-center text-slate-600">${res.similarity}%</td>
