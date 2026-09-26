@@ -475,6 +475,9 @@
     let currentActiveIndex = 0;
     let currentAuthMode = 'login';
 
+    // RFC Standard Client-Side Email Regex Check (user@domain.tld)
+    const EMAIL_REGEX = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
+
     const resumeFileInput = document.getElementById('resumeFile');
     const fileText = document.getElementById('fileText');
     const jdInput = document.getElementById('jdInput');
@@ -634,8 +637,9 @@
       errBox.classList.add('hidden');
       successBox.classList.add('hidden');
 
-      if (!email) {
-        errBox.textContent = "Please enter an email address first.";
+      // Strict validation before dispatching to backend/Brevo
+      if (!email || !EMAIL_REGEX.test(email)) {
+        errBox.textContent = "Please enter a valid email address (e.g. name@gmail.com).";
         errBox.classList.remove('hidden');
         return;
       }
@@ -679,8 +683,14 @@
       errBox.classList.add('hidden');
       successBox.classList.add('hidden');
 
-      if (!email || !password) {
-        errBox.textContent = "Please fill in email and password.";
+      if (!email || !EMAIL_REGEX.test(email)) {
+        errBox.textContent = "Please enter a valid email address (e.g. name@gmail.com).";
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      if (!password) {
+        errBox.textContent = "Password is required.";
         errBox.classList.remove('hidden');
         return;
       }
