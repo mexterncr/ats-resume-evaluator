@@ -78,21 +78,44 @@ def clean_text(text):
     return re.sub(r'\s+', ' ', text).strip()
 
 def extract_candidate_name(raw_text, filename):
-    lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
-    for line in lines[:6]:
-        line_clean = re.sub(r'[^a-zA-Z\s]', '', line).strip()
-        words = line_clean.split()
-        if 2 <= len(words) <= 4:
-            lower_words = [w.lower() for w in words]
-            forbidden = {"curriculum", "vitae", "resume", "profile", "contact", "email", "phone", "summary", "objective"}
-            if not any(f in lower_words for f in forbidden):
-                return line_clean.title()
-    
+    if not raw_text:
+        return "Candidate"
+
+    DISQUALIFIERS = {
+        "curriculum", "vitae", "resume", "profile", "contact", "email", "phone",
+        "developer", "engineer", "scientist", "analyst", "intern", "lead", "manager",
+        "mumbai", "maharashtra", "delhi", "bangalore", "pune", "india", "address",
+        "education", "skills", "projects", "experience", "certifications", "summary",
+        "road", "nagar", "lane", "street", "pincode", "github", "linkedin"
+    }
+
+    # Line-by-line inspection of document header
+    raw_lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+
+    for line in raw_lines[:12]:
+        # Skip contact numbers, links, addresses or emails
+        if any(char in line for char in ["@", "http", "www.", "/", "+", ":", "|", "#"]):
+            continue
+        if re.search(r'\d', line):
+            continue
+
+        clean_tokens = [w for w in re.split(r'[^a-zA-Z]', line) if w]
+        
+        # Valid names are 2 to 4 alphabetic words
+        if 2 <= len(clean_tokens) <= 4:
+            lowered_tokens = [t.lower() for t in clean_tokens]
+            if any(token in DISQUALIFIERS for token in lowered_tokens):
+                continue
+            return " ".join(clean_tokens).title()
+
+    # Fallback to cleaned filename if document header has unconventional formatting
     clean_fn = re.sub(r'\.[^/.]+$', '', filename)
-    clean_fn = re.sub(r'[-_]', ' ', clean_fn)
-    words = [w for w in clean_fn.split() if w.lower() not in {"resume", "cv", "profile", "senior", "updated", "final", "untitled", "document"}]
-    if words:
-        return " ".join(words).title()
+    clean_fn = re.sub(r'\(\d+\)', '', clean_fn)
+    fn_first_part = re.split(r'[-_]', clean_fn)[0].strip()
+    fn_tokens = [w for w in fn_first_part.split() if w.lower() not in DISQUALIFIERS and not re.search(r'\d', w)]
+    if len(fn_tokens) >= 2:
+        return " ".join(fn_tokens).title()
+
     return "Candidate"
 
 def extract_file_content(file):
@@ -338,7 +361,7 @@ def analyze():
 
     if is_demo:
         demo_text = """
-        Mohammed Masiha. Email: masiha@email.com. Phone: +91 9876543210.
+        Mohammed Masiha. Email: student@email.com. Phone: +91 9876543210.
         Education: Bachelor of Science in Computer Science, 2026.
         Technical Skills: Python, SQL, C++, HTML, CSS, JavaScript, Flask, Git, GitHub, Machine Learning, Data Structures.
         Projects: AI Resume ATS Evaluator using Python NLP, Web Inventory System using Node.js and SQL.
@@ -352,7 +375,6 @@ def analyze():
 
         for file in valid_files:
             text = extract_file_content(file)
-            # Agar parser empty extract kare, toh bhi file drop na ho, dummy placeholder mile
             if not text.strip():
                 text = f"Candidate Document: {file.filename}. Format parsed with minimal extractable tokens."
             resumes_data.append((file.filename, text))
