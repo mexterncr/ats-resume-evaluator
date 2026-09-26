@@ -5,4 +5,5 @@ scikit-learn
 python-docx
 flask-sqlalchemy
 google-auth
+psycopg2-binary
 requests
