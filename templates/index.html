@@ -167,7 +167,29 @@
           </button>
         </div>
       </form>
+<!-- Real-Time Loading & Processing State -->
+      <div id="evaluationLoadingState" class="hidden mt-8 pt-8 border-t border-slate-200">
+        <div class="bg-blue-50/60 border border-blue-200 rounded-2xl p-6 sm:p-8 text-center max-w-xl mx-auto shadow-sm">
+          <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 text-blue-600 mb-4 animate-bounce">
+            <svg class="w-7 h-7 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </div>
+          <h4 class="text-base font-bold text-slate-800">Processing Resumes with AI Engine...</h4>
+          <p class="text-xs text-slate-500 mt-1" id="loadingDynamicSub">Extracting token streams, matching ontology skills & computing Cosine similarity vectors.</p>
+          
+          <!-- Animated Progress Bar -->
+          <div class="w-full bg-blue-100 h-2 rounded-full overflow-hidden mt-5 relative">
+            <div class="bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600 h-full w-full rounded-full animate-pulse"></div>
+          </div>
 
+          <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 font-medium">
+            <span>Bi-gram Vectorizer Active</span>
+            <span>Parsing Candidates...</span>
+          </div>
+        </div>
+      </div>
       <!-- Results Dashboard Panel -->
       <div id="resultsCard" class="hidden mt-10 pt-8 border-t border-slate-200">
         
@@ -1127,7 +1149,7 @@
       URL.revokeObjectURL(url);
     }
 
-    evalForm.addEventListener('submit', async (e) => {
+   evalForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       hideInlineAlert();
       const jd = jdInput.value.trim();
@@ -1145,8 +1167,22 @@
         return;
       }
 
+      // Loader Activate & Previous Results Hide
       submitBtn.disabled = true;
-      submitBtn.textContent = "Executing NLP Vectors & Metric Computation...";
+      submitBtn.innerHTML = `
+        <span class="inline-flex items-center gap-2">
+          <svg class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          Executing NLP Vectors & Metric Computation...
+        </span>
+      `;
+
+      const loadingPanel = document.getElementById('evaluationLoadingState');
+      resultsCard.classList.add('hidden');
+      loadingPanel.classList.remove('hidden');
+      loadingPanel.scrollIntoView({ behavior: 'smooth' });
 
       const roleSelectedText = roleSelector.options[roleSelector.selectedIndex].text;
       const formData = new FormData();
@@ -1196,14 +1232,18 @@
           renderCandidateDetails(0);
           checkAuthStatus();
 
+          // Loader Hide & Show Results
+          loadingPanel.classList.add('hidden');
           resultsCard.classList.remove('hidden');
           resultsCard.scrollIntoView({ behavior: 'smooth' });
           showToast(`Evaluation complete for ${globalBatchResults.length} document(s).`, "info");
         } else {
+          loadingPanel.classList.add('hidden');
           showInlineAlert(data.error || "Evaluation process error.");
           showToast(data.error || "Evaluation failed.", "error");
         }
       } catch (err) {
+        loadingPanel.classList.add('hidden');
         showInlineAlert("Server communication failure: " + err.message);
         showToast("Server connection error.", "error");
       } finally {
