@@ -18,13 +18,11 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'skillsync-secret-key-pr
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///skillsync.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ================= CREDENTIALS CONFIGURATION ================= #
+# Credentials
 SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "huzaifayhchannel@gmail.com")
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "1063711450384-jqhqdt2igs7eldt2ldsms9ug55skrj4g.apps.googleusercontent.com")
-# ============================================================= #
 
-# Strict Email Format Validation Pattern
 EMAIL_REGEX = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$'
 
 db = SQLAlchemy(app)
@@ -43,6 +41,7 @@ class ScanHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     filename = db.Column(db.String(256), nullable=False)
+    candidate_name = db.Column(db.String(128), default="Candidate")
     ats_score = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(64), nullable=False)
     similarity = db.Column(db.Float, nullable=False)
@@ -78,21 +77,40 @@ def clean_text(text):
     text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
     return re.sub(r'\s+', ' ', text).strip()
 
+def extract_candidate_name(raw_text, filename):
+    lines = [line.strip() for line in raw_text.split('\n') if line.strip()]
+    for line in lines[:6]:
+        line_clean = re.sub(r'[^a-zA-Z\s]', '', line).strip()
+        words = line_clean.split()
+        if 2 <= len(words) <= 4:
+            lower_words = [w.lower() for w in words]
+            forbidden = {"curriculum", "vitae", "resume", "profile", "contact", "email", "phone", "summary", "objective"}
+            if not any(f in lower_words for f in forbidden):
+                return line_clean.title()
+    
+    clean_fn = re.sub(r'\.[^/.]+$', '', filename)
+    clean_fn = re.sub(r'[-_]', ' ', clean_fn)
+    words = [w for w in clean_fn.split() if w.lower() not in {"resume", "cv", "profile", "senior", "updated", "final", "untitled", "document"}]
+    if words:
+        return " ".join(words).title()
+    return "Candidate"
+
 def extract_file_content(file):
     filename = file.filename.lower()
     extracted_text = ""
     try:
+        file.seek(0)
         if filename.endswith('.pdf'):
             reader = PdfReader(file)
             for page in reader.pages:
                 txt = page.extract_text()
                 if txt:
-                    extracted_text += txt + " "
+                    extracted_text += txt + "\n"
         elif filename.endswith(('.docx', '.doc')):
             doc = docx.Document(file)
             for para in doc.paragraphs:
                 if para.text:
-                    extracted_text += para.text + " "
+                    extracted_text += para.text + "\n"
             for table in doc.tables:
                 for row in table.rows:
                     for cell in row.cells:
@@ -100,16 +118,15 @@ def extract_file_content(file):
                             extracted_text += cell.text + " "
         elif filename.endswith('.txt'):
             extracted_text = file.read().decode('utf-8', errors='ignore')
-    except Exception:
-        return ""
+    except Exception as e:
+        print(f"Error reading {file.filename}: {e}")
+        extracted_text = ""
     return extracted_text
 
 def send_real_email_otp(recipient_email, otp_code, purpose):
     clean_key = (BREVO_API_KEY or "").strip()
     if not clean_key:
-        print(f"\n[Notice]: BREVO_API_KEY not configured.")
-        print(f"[Verification Code for {recipient_email}]: >>> {otp_code} <<<\n")
-        return False, "BREVO_API_KEY is not configured in server environment."
+        return False, "BREVO_API_KEY not configured in server environment."
 
     url = "https://api.brevo.com/v3/smtp/email"
     headers = {
@@ -135,15 +152,9 @@ def send_real_email_otp(recipient_email, otp_code, purpose):
 
     try:
         response = requests.post(url, json=payload, headers=headers, timeout=10)
-        if response.status_code in [200, 201, 202]:
-            print(f"[Brevo Success]: Code delivered to {recipient_email}")
-            return True, "Email sent successfully."
-        else:
-            print(f"[Brevo API Error]: {response.text}")
-            return False, "Email provider rejected the dispatch."
+        return response.status_code in [200, 201, 202], "Dispatched"
     except Exception as e:
-        print(f"[Brevo Connection Exception]: {str(e)}")
-        return False, "Timeout connecting to mail server."
+        return False, str(e)
 
 @app.route('/')
 def home():
@@ -165,7 +176,6 @@ def send_otp():
     email = data.get('email', '').strip().lower()
     purpose = data.get('purpose', 'register')
 
-    # Strict Regex Check: user@domain.tld (e.g. .com, .in, .org, .edu)
     if not email or not re.match(EMAIL_REGEX, email):
         return jsonify({'error': 'Please enter a valid email address (e.g. name@gmail.com).'}), 400
 
@@ -301,6 +311,7 @@ def get_history():
     history_data = [{
         'id': s.id,
         'filename': s.filename,
+        'candidate_name': getattr(s, 'candidate_name', 'Candidate'),
         'ats_score': s.ats_score,
         'status': s.status,
         'similarity': s.similarity,
@@ -327,7 +338,7 @@ def analyze():
 
     if is_demo:
         demo_text = """
-        Mohammed CS Student. Email: student@email.com. Phone: +91 9876543210.
+        Mohammed Masiha. Email: masiha@email.com. Phone: +91 9876543210.
         Education: Bachelor of Science in Computer Science, 2026.
         Technical Skills: Python, SQL, C++, HTML, CSS, JavaScript, Flask, Git, GitHub, Machine Learning, Data Structures.
         Projects: AI Resume ATS Evaluator using Python NLP, Web Inventory System using Node.js and SQL.
@@ -341,11 +352,10 @@ def analyze():
 
         for file in valid_files:
             text = extract_file_content(file)
-            if text.strip():
-                resumes_data.append((file.filename, text))
-
-        if not resumes_data:
-            return jsonify({'error': 'Unable to parse text from uploaded document(s).'}), 400
+            # Agar parser empty extract kare, toh bhi file drop na ho, dummy placeholder mile
+            if not text.strip():
+                text = f"Candidate Document: {file.filename}. Format parsed with minimal extractable tokens."
+            resumes_data.append((file.filename, text))
 
     results = []
     vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
@@ -354,9 +364,13 @@ def analyze():
 
     for fname, r_text in resumes_data:
         clean_res = clean_text(r_text)
+        cand_name = extract_candidate_name(r_text, fname)
 
-        tfidf_matrix = vectorizer.fit_transform([clean_jd, clean_res])
-        similarity = round(float(cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]) * 100, 1)
+        try:
+            tfidf_matrix = vectorizer.fit_transform([clean_jd, clean_res])
+            similarity = round(float(cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]) * 100, 1)
+        except Exception:
+            similarity = 0.0
 
         sections = {}
         for name, kws in SECTIONS_TO_CHECK.items():
@@ -383,6 +397,7 @@ def analyze():
             scan_record = ScanHistory(
                 user_id=current_user_id,
                 filename=fname,
+                candidate_name=cand_name,
                 ats_score=ats_score,
                 status=status,
                 similarity=similarity,
@@ -395,6 +410,7 @@ def analyze():
 
         results.append({
             'filename': fname,
+            'candidate_name': cand_name,
             'timestamp': now_str,
             'ats_score': ats_score,
             'status': status,
