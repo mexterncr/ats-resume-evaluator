@@ -478,21 +478,45 @@
 
     const EMAIL_REGEX = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
 
-    // Smart Client-Side Candidate Name Parser Fallback
+    // Strict Client-Side Candidate Name Sanitizer
     function getCleanCandidateName(rawName, filename) {
-      if (rawName && rawName.trim() && rawName.trim().toLowerCase() !== 'candidate') {
-        return rawName.trim();
+      const NOISE_WORDS = [
+        'mumbai', 'maharashtra', 'delhi', 'bangalore', 'pune', 'india', 
+        'email', 'com', 'gmail', 'phone', 'contact', 'resume', 'cv', 
+        'profile', 'senior', 'junior', 'executive', 'updated', 'final', 
+        'doc', 'untitled', 'document', 'developer', 'engineer', 'analyst'
+      ];
+
+      let candidateStr = (rawName || '').trim();
+
+      // Check if backend returned contaminated metadata
+      let isContaminated = false;
+      if (candidateStr) {
+        let low = candidateStr.toLowerCase();
+        if (NOISE_WORDS.some(w => low.includes(w)) || low.includes('@') || /\d/.test(candidateStr)) {
+          isContaminated = true;
+        }
       }
+
+      // Valid proper noun returned directly from document
+      if (candidateStr && !isContaminated && candidateStr.toLowerCase() !== 'candidate') {
+        let parts = candidateStr.split(/\s+/).filter(w => !NOISE_WORDS.includes(w.toLowerCase()));
+        if (parts.length >= 2) {
+          return parts.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        }
+      }
+
+      // Clean fallback from filename tokens
       let base = (filename || 'Candidate').replace(/\.[^/.]+$/, '');
-      base = base.replace(/[-_]/g, ' ');
       base = base.replace(/\(\d+\)/g, '');
-      let tokens = base.split(/\s+/).filter(t => {
-        let low = t.toLowerCase();
-        return !['resume', 'cv', 'profile', 'senior', 'updated', 'final', 'doc', 'untitled', 'document'].includes(low);
-      });
-      if (tokens.length > 0) {
+      let segments = base.split(/[-_]/);
+      let namePart = segments[0].trim();
+      let tokens = namePart.split(/\s+/).filter(t => !NOISE_WORDS.includes(t.toLowerCase()) && !/\d/.test(t));
+      
+      if (tokens.length >= 2) {
         return tokens.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
       }
+
       return 'Candidate';
     }
 
