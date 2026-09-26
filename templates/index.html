@@ -478,6 +478,24 @@
 
     const EMAIL_REGEX = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
 
+    // Smart Client-Side Candidate Name Parser Fallback
+    function getCleanCandidateName(rawName, filename) {
+      if (rawName && rawName.trim() && rawName.trim().toLowerCase() !== 'candidate') {
+        return rawName.trim();
+      }
+      let base = (filename || 'Candidate').replace(/\.[^/.]+$/, '');
+      base = base.replace(/[-_]/g, ' ');
+      base = base.replace(/\(\d+\)/g, '');
+      let tokens = base.split(/\s+/).filter(t => {
+        let low = t.toLowerCase();
+        return !['resume', 'cv', 'profile', 'senior', 'updated', 'final', 'doc', 'untitled', 'document'].includes(low);
+      });
+      if (tokens.length > 0) {
+        return tokens.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      }
+      return 'Candidate';
+    }
+
     const resumeFileInput = document.getElementById('resumeFile');
     const fileText = document.getElementById('fileText');
     const jdInput = document.getElementById('jdInput');
@@ -781,18 +799,21 @@
 
         if (res.ok && data.history && data.history.length > 0) {
           emptyState.classList.add('hidden');
-          tbody.innerHTML = data.history.map(s => `
-            <tr class="hover:bg-slate-50 transition">
-              <td class="p-2.5 text-slate-400 whitespace-nowrap text-[11px]">${s.timestamp}</td>
-              <td class="p-2.5 font-bold text-slate-900">${s.candidate_name || 'Candidate'}</td>
-              <td class="p-2.5 font-medium text-slate-600 truncate max-w-[180px]">${s.filename}</td>
-              <td class="p-2.5 text-slate-500">${s.role_title}</td>
-              <td class="p-2.5 text-center">${getBadgeHTML(s.status)}</td>
-              <td class="p-2.5 text-center font-bold text-blue-700">${s.ats_score}%</td>
-              <td class="p-2.5 text-center">${s.similarity}%</td>
-              <td class="p-2.5 text-center">${s.skill_score}%</td>
-            </tr>
-          `).join('');
+          tbody.innerHTML = data.history.map(s => {
+            const cleanName = getCleanCandidateName(s.candidate_name, s.filename);
+            return `
+              <tr class="hover:bg-slate-50 transition">
+                <td class="p-2.5 text-slate-400 whitespace-nowrap text-[11px]">${s.timestamp}</td>
+                <td class="p-2.5 font-bold text-slate-900">${cleanName}</td>
+                <td class="p-2.5 font-medium text-slate-600 truncate max-w-[180px]">${s.filename}</td>
+                <td class="p-2.5 text-slate-500">${s.role_title}</td>
+                <td class="p-2.5 text-center">${getBadgeHTML(s.status)}</td>
+                <td class="p-2.5 text-center font-bold text-blue-700">${s.ats_score}%</td>
+                <td class="p-2.5 text-center">${s.similarity}%</td>
+                <td class="p-2.5 text-center">${s.skill_score}%</td>
+              </tr>
+            `;
+          }).join('');
         } else {
           emptyState.classList.remove('hidden');
         }
@@ -821,7 +842,8 @@
       const report = globalBatchResults[index];
       if (!report) return;
 
-      document.getElementById('resFilename').textContent = `${report.candidate_name} — ${report.filename}`;
+      const cleanName = getCleanCandidateName(report.candidate_name, report.filename);
+      document.getElementById('resFilename').textContent = `${cleanName} — ${report.filename}`;
       document.getElementById('resTime').textContent = report.timestamp;
       document.getElementById('mScore').textContent = report.ats_score + "%";
       document.getElementById('mSim').textContent = report.similarity + "%";
@@ -871,7 +893,7 @@
       if (!globalBatchResults.length) return;
       const dataRows = globalBatchResults.map((r, i) => ({
         "Rank": i + 1,
-        "Candidate Name": r.candidate_name,
+        "Candidate Name": getCleanCandidateName(r.candidate_name, r.filename),
         "Resume Document": r.filename,
         "Status": r.status,
         "ATS Score (%)": r.ats_score,
@@ -901,7 +923,7 @@
 
       const tableData = globalBatchResults.map((r, i) => [
         `#${i + 1}`,
-        r.candidate_name,
+        getCleanCandidateName(r.candidate_name, r.filename),
         r.filename,
         r.status,
         `${r.ats_score}%`,
@@ -925,7 +947,8 @@
       if (!globalBatchResults.length) return;
       let csvContent = "data:text/csv;charset=utf-8,Rank,Candidate Name,Resume File,Status,ATS Score,Semantic Similarity,Skills Match,Section Score\n";
       globalBatchResults.forEach((res, idx) => {
-        csvContent += `${idx + 1},"${res.candidate_name}","${res.filename}",${res.status},${res.ats_score}%,${res.similarity}%,${res.skill_score}%,${res.sec_score}%\n`;
+        const name = getCleanCandidateName(res.candidate_name, res.filename);
+        csvContent += `${idx + 1},"${name}","${res.filename}",${res.status},${res.ats_score}%,${res.similarity}%,${res.skill_score}%,${res.sec_score}%\n`;
       });
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
@@ -938,7 +961,11 @@
 
     function exportLeaderboardJSON() {
       if (!globalBatchResults.length) return;
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(globalBatchResults, null, 2));
+      const formattedResults = globalBatchResults.map(r => ({
+        ...r,
+        candidate_name: getCleanCandidateName(r.candidate_name, r.filename)
+      }));
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formattedResults, null, 2));
       const link = document.createElement("a");
       link.setAttribute("href", dataStr);
       link.setAttribute("download", `SkillSync_Audit_${new Date().toISOString().slice(0,10)}.json`);
@@ -951,6 +978,7 @@
       const report = globalBatchResults[currentActiveIndex];
       if (!report) return;
 
+      const cleanName = getCleanCandidateName(report.candidate_name, report.filename);
       const htmlContent = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
         <head><meta charset='utf-8'><title>ATS Evaluation Audit</title>
@@ -964,7 +992,7 @@
         </head>
         <body>
           <h1>SkillSync AI — Candidate Audit Report</h1>
-          <p><strong>Candidate Name:</strong> ${report.candidate_name}</p>
+          <p><strong>Candidate Name:</strong> ${cleanName}</p>
           <p><strong>Candidate File:</strong> ${report.filename}</p>
           <p><strong>Audit Timestamp:</strong> ${report.timestamp}</p>
           <p><strong>Decision Status:</strong> ${report.status}</p>
@@ -992,7 +1020,7 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${report.filename.replace(/\.[^/.]+$/, "")}_ATS_Audit.doc`;
+      link.download = `${cleanName.replace(/\s+/g, '_')}_ATS_Audit.doc`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1040,18 +1068,21 @@
           
           if (batchTableCard && batchTableBody) {
             if (isBatch) {
-              batchTableBody.innerHTML = globalBatchResults.map((res, idx) => `
-                <tr onclick="renderCandidateDetails(${idx})" class="cursor-pointer hover:bg-blue-50/50 transition-colors ${idx === 0 ? 'bg-blue-100/70 ring-1 ring-blue-400 font-semibold' : ''}">
-                  <td class="p-3 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#${idx+1}`))}</td>
-                  <td class="p-3 font-bold text-slate-900">${res.candidate_name}</td>
-                  <td class="p-3 font-medium text-slate-600 truncate max-w-[200px]">${res.filename}</td>
-                  <td class="p-3 text-center">${getBadgeHTML(res.status)}</td>
-                  <td class="p-3 text-center font-extrabold text-blue-600">${res.ats_score}%</td>
-                  <td class="p-3 text-center text-slate-600">${res.similarity}%</td>
-                  <td class="p-3 text-center text-slate-600">${res.skill_score}%</td>
-                  <td class="p-3 text-center text-slate-600">${res.sec_score}%</td>
-                </tr>
-              `).join('');
+              batchTableBody.innerHTML = globalBatchResults.map((res, idx) => {
+                const cleanName = getCleanCandidateName(res.candidate_name, res.filename);
+                return `
+                  <tr onclick="renderCandidateDetails(${idx})" class="cursor-pointer hover:bg-blue-50/50 transition-colors ${idx === 0 ? 'bg-blue-100/70 ring-1 ring-blue-400 font-semibold' : ''}">
+                    <td class="p-3 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#${idx+1}`))}</td>
+                    <td class="p-3 font-bold text-slate-900">${cleanName}</td>
+                    <td class="p-3 font-medium text-slate-600 truncate max-w-[200px]">${res.filename}</td>
+                    <td class="p-3 text-center">${getBadgeHTML(res.status)}</td>
+                    <td class="p-3 text-center font-extrabold text-blue-600">${res.ats_score}%</td>
+                    <td class="p-3 text-center text-slate-600">${res.similarity}%</td>
+                    <td class="p-3 text-center text-slate-600">${res.skill_score}%</td>
+                    <td class="p-3 text-center text-slate-600">${res.sec_score}%</td>
+                  </tr>
+                `;
+              }).join('');
               batchTableCard.style.display = 'block';
             } else {
               batchTableCard.style.display = 'none';
