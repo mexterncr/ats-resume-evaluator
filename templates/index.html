@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillSync AI — ATS Intelligence & Resume Screener</title>
+  
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Google One Tap / Sign-In Client SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Export Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    @keyframes slideInDown {
+      from { transform: translateY(-100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast-animate {
+      animation: slideInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      #resultsCard, #resultsCard * { visibility: visible; }
+      #resultsCard {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        border: none;
+      }
+      #printBtn, #exportBtnGroup, #docExportBtn { display: none !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
+
+  <!-- Toast Notification Floating Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Navigation Bar -->
+  <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <a href="#home" class="flex items-center space-x-2 sm:space-x-3 cursor-pointer">
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-500/30">⚡</div>
+        <span class="font-extrabold text-xl tracking-tight text-slate-900">SkillSync<span class="text-blue-600">.ai</span></span>
+      </a>
+      
+      <div class="hidden lg:flex items-center space-x-8 text-sm font-semibold text-slate-600">
+        <a href="#analyzer" class="hover:text-blue-600 transition">Resume Analyzer</a>
+        <a href="/builder" class="hover:text-purple-600 transition flex items-center gap-1.5 font-bold">
+          <span>✨</span> AI Resume Studio
+        </a>
+        <a href="#features" class="hover:text-blue-600 transition">Platform Features</a>
+        <a href="#workflow" class="hover:text-blue-600 transition">How It Works</a>
+        <a href="#about" class="hover:text-blue-600 transition">NLP Architecture</a>
+      </div>
+
+      <!-- Auth Controls -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <div id="guestNav" class="flex items-center gap-2">
+          <button onclick="openAuthModal('login')" class="text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 px-3 py-2 transition">
+            Sign In
+          </button>
+          <button onclick="openAuthModal('register')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition">
+            Create Account
+          </button>
+        </div>
+
+        <div id="userNav" class="hidden flex items-center gap-2 sm:gap-3">
+          <button onclick="openHistoryModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 flex items-center gap-1.5 transition">
+            <span>📜</span> My History (<span id="userScanCount" class="text-blue-600 font-bold">0</span>)
+          </button>
+          <span id="userEmailBadge" class="hidden sm:inline-block text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200"></span>
+          <button onclick="handleLogout()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1.5 transition">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header id="home" class="pt-14 pb-12 bg-gradient-to-b from-white via-slate-50 to-slate-100 border-b border-slate-200">
+    <div class="max-w-5xl mx-auto px-6 text-center">
+      <div class="inline-flex items-center space-x-2 bg-blue-50 border border-blue-200 text-blue-700 px-3.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase mb-6">
+        <span>Enterprise AI Edition</span> • <span>Multi-Format Stream Active</span>
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        Analyze Candidate Resumes. <br><span class="text-blue-600">Maximize Multi-Vector ATS Matching.</span>
+      </h1>
+      <p class="mt-4 text-slate-600 max-w-2xl mx-auto text-sm sm:text-base">
+        Automated Enterprise Screening Engine powered by Bi-gram TF-IDF NLP Modeling, Ontology Skill Extraction, and Secure Verification Codes.
+      </p>
+      <div class="mt-8 flex justify-center gap-3 sm:gap-4">
+        <a href="#analyzer" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 sm:px-6 py-3 rounded-xl shadow-md transition text-sm">Analyze Resumes</a>
+        <a href="/builder" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-5 sm:px-6 py-3 rounded-xl shadow-md transition text-sm flex items-center gap-1.5">
+          <span>✨</span> Open AI Builder
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Workspace Container -->
+  <main id="analyzer" class="max-w-7xl mx-auto px-4 sm:px-6 py-10 flex-1 w-full">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl shadow-slate-200/50 p-5 sm:p-8">
+      
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 border-b border-slate-100 mb-6 gap-4">
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-slate-900">ATS Evaluation Workspace</h2>
+          <p class="text-xs text-slate-500 mt-1">Upload candidate resumes (PDF, DOCX, TXT) and target Job Description for screening.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+          <select id="roleSelector" class="bg-slate-50 border border-slate-300 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">⚡ Select Preset Role JD</option>
+            <option value="software_engineer">Junior Software Engineer</option>
+            <option value="data_scientist">Data Scientist / ML Engineer</option>
+            <option value="frontend_dev">Frontend Web Developer</option>
+          </select>
+          <button id="demoBtn" type="button" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg transition border border-slate-300 flex items-center gap-1.5">
+            <span>⚡</span> Demo Data
+          </button>
+        </div>
+      </div>
+
+      <!-- Inline Validation Banner -->
+      <div id="formInlineAlert" class="hidden mb-6 p-4 rounded-xl border border-rose-200 bg-rose-50 flex items-start gap-3 transition">
+        <span class="text-rose-600 text-base font-bold leading-none mt-0.5">⚠️</span>
+        <div class="flex-1">
+          <h5 class="text-xs font-bold text-rose-800 uppercase tracking-wider">Submission Requirement Missing</h5>
+          <p id="formInlineAlertText" class="text-xs text-rose-700 mt-0.5 font-medium"></p>
+        </div>
+        <button onclick="document.getElementById('formInlineAlert').classList.add('hidden')" class="text-rose-400 hover:text-rose-600 text-xs font-bold">✕</button>
+      </div>
+
+      <form id="evalForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">1. Target Job Description</label>
+          <textarea id="jdInput" rows="9" class="w-full border border-slate-300 rounded-xl p-3.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder-slate-400 bg-slate-50/50" placeholder="Paste technical job description here..."></textarea>
+          <div class="flex justify-between text-xs text-slate-400 mt-1 px-1">
+            <span id="jdWordCount">0 words</span>
+            <span>Required for TF-IDF Vectorization</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-slate-700 mb-2">2. Upload Candidate Resumes (PDF, DOCX, TXT)</label>
+          <div class="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-blue-500 transition cursor-pointer bg-slate-50/50 flex flex-col justify-center items-center h-[216px]" onclick="document.getElementById('resumeFile').click()">
+            <div class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-xl mb-3">📄</div>
+            <p class="text-sm font-semibold text-slate-700" id="fileText">Click to browse or drop resume documents</p>
+            <p class="text-xs text-slate-400 mt-1">Accepts multiple PDF, Word (.docx), or Text (.txt) files up to 5 MB</p>
+            <input type="file" id="resumeFile" class="hidden" accept=".pdf,.docx,.doc,.txt" multiple>
+          </div>
+          <p class="text-xs text-slate-400 mt-2 px-1">Multi-format file stream extraction engine active</p>
+        </div>
+
+        <div class="md:col-span-2 pt-2">
+          <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-500/25 transition">
+            🚀 Run Comprehensive ATS Evaluation
+          </button>
+        </div>
+      </form>
+
+      <!-- Real-Time Loading & Processing State -->
+      <div id="evaluationLoadingState" class="hidden mt-8 pt-8 border-t border-slate-200">
+        <div class="bg-blue-50/60 border border-blue-200 rounded-2xl p-6 sm:p-8 text-center max-w-xl mx-auto shadow-sm">
+          <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-blue-100 text-blue-600 mb-4 animate-bounce">
+            <svg class="w-7 h-7 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </div>
+          <h4 class="text-base font-bold text-slate-800">Processing Resumes with AI Engine...</h4>
+          <p class="text-xs text-slate-500 mt-1" id="loadingDynamicSub">Extracting token streams, matching ontology skills & computing Cosine similarity vectors.</p>
+          
+          <!-- Animated Progress Bar -->
+          <div class="w-full bg-blue-100 h-2 rounded-full overflow-hidden mt-5 relative">
+            <div class="bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-600 h-full w-full rounded-full animate-pulse"></div>
+          </div>
+
+          <div class="flex items-center justify-between text-[11px] text-slate-400 mt-2 font-medium">
+            <span>Bi-gram Vectorizer Active</span>
+            <span>Parsing Candidates...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Dashboard Panel -->
+      <div id="resultsCard" class="hidden mt-10 pt-8 border-t border-slate-200">
+        
+        <!-- Dedicated AI Studio Callout Banner -->
+        <div class="mb-6 p-4 rounded-2xl bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 border border-purple-500/30 text-white shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center text-xl shadow-inner">
+              ✨
+            </div>
+            <div>
+              <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                ATS Gaps Identified in Candidate Profile
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">100% Match Ready</span>
+              </h4>
+              <p class="text-xs text-slate-300">Synthesize target JD requirements and missing technical competencies into an optimized resume.</p>
+            </div>
+          </div>
+          <button type="button" onclick="navigateToStudio()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold text-xs shadow-lg shadow-purple-500/25 transition transform hover:scale-[1.02] flex items-center justify-center gap-2 shrink-0">
+            <span>Open in AI Resume Studio</span>
+            <span>→</span>
+          </button>
+        </div>
+
+        <!-- Batch Leaderboard Table with Candidate Name Column -->
+        <div id="batchTableCard" style="display: none;" class="mb-8 bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5">
+          <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-4 gap-3">
+            <div>
+              <h4 class="font-bold text-sm text-slate-800 flex items-center gap-2">
+                <span>🏆 Candidates Leaderboard & Ranking</span>
+              </h4>
+              <p class="text-[11px] text-slate-500">Click on any candidate row below to inspect their detailed audit report.</p>
+            </div>
+            
+            <div id="exportBtnGroup" class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span class="text-[11px] font-semibold text-slate-400">Export:</span>
+              <button type="button" onclick="exportLeaderboardExcel()" class="bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition">
+                <span>📊</span> Excel (.xlsx)
+              </button>
+              <button type="button" onclick="exportLeaderboardPDF()" class="bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition">
+                <span>📑</span> PDF (.pdf)
+              </button>
+              <button type="button" onclick="exportLeaderboardCSV()" class="bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition">
+                <span>📥</span> CSV (.csv)
+              </button>
+              <button type="button" onclick="exportLeaderboardJSON()" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 shadow-sm transition">
+                <span>🔣</span> JSON
+              </button>
+            </div>
+          </div>
+          
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-200/70 text-slate-700 font-bold uppercase text-[10px]">
+                <tr>
+                  <th class="p-2.5 rounded-l-lg">Rank</th>
+                  <th class="p-2.5">Candidate Name</th>
+                  <th class="p-2.5">Resume File</th>
+                  <th class="p-2.5 text-center">Status</th>
+                  <th class="p-2.5 text-center">ATS Score</th>
+                  <th class="p-2.5 text-center">Similarity</th>
+                  <th class="p-2.5 text-center">Skills</th>
+                  <th class="p-2.5 text-center rounded-r-lg">Sections</th>
+                </tr>
+              </thead>
+              <tbody id="batchTableBody" class="divide-y divide-slate-200"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Candidate Detailed Audit Header -->
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
+          <div>
+            <span class="text-xs font-bold text-blue-600 uppercase tracking-wider">Candidate Detailed Audit</span>
+            <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900" id="resFilename">Report</h3>
+            <p class="text-xs text-slate-500" id="resTime"></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="docExportBtn" onclick="exportCandidateDoc()" class="text-xs bg-white hover:bg-blue-50 border border-blue-300 text-blue-700 font-semibold px-3 py-2 rounded-lg flex items-center gap-1 transition shadow-sm">
+              <span>📄</span> Export Word (.doc)
+            </button>
+            <button id="printBtn" onclick="window.print()" class="text-xs bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-semibold px-3 py-2 rounded-lg flex items-center gap-1 transition">
+              <span>🖨️</span> Print / Save PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- 4 Metric Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div class="bg-blue-50/70 border border-blue-200 rounded-xl p-4 text-center">
+            <span class="text-xs font-bold text-blue-700 uppercase">Overall ATS Score</span>
+            <div class="text-3xl font-extrabold text-blue-700 mono my-1" id="mScore">0%</div>
+            <span id="mStatusBadge" class="inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1"></span>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
+            <span class="text-xs font-bold text-slate-500 uppercase">Semantic Similarity</span>
+            <div class="text-3xl font-extrabold text-slate-800 mono my-1" id="mSim">0%</div>
+            <span class="text-[11px] text-slate-400">Cosine Distance Matrix</span>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
+            <span class="text-xs font-bold text-slate-500 uppercase">Skills Match</span>
+            <div class="text-3xl font-extrabold text-slate-800 mono my-1" id="mSkill">0%</div>
+            <span class="text-[11px] text-slate-400">Target Tech Skills</span>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-xl p-4 text-center shadow-sm">
+            <span class="text-xs font-bold text-slate-500 uppercase">Section Structure</span>
+            <div class="text-3xl font-extrabold text-slate-800 mono my-1" id="mSec">0%</div>
+            <span class="text-[11px] text-slate-400">ATS Formatting Audit</span>
+          </div>
+        </div>
+
+        <!-- Detail Breakdown -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+            <h4 class="font-bold text-sm text-slate-800 mb-3">Domain Skills & Keywords</h4>
+            <div class="mb-4">
+              <span class="text-xs font-bold text-emerald-700 block mb-2">✓ Matched in Resume:</span>
+              <div id="matchedTags" class="flex flex-wrap gap-1.5"></div>
+            </div>
+            <div>
+              <span class="text-xs font-bold text-rose-700 block mb-2">✗ Missing from Target JD:</span>
+              <div id="missingTags" class="flex flex-wrap gap-1.5"></div>
+            </div>
+          </div>
+
+          <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
+            <h4 class="font-bold text-sm text-slate-800 mb-3">Resume Structural Section Audit</h4>
+            <div id="sectionAudit" class="space-y-2 text-sm"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Platform Features Section -->
+  <section id="features" class="py-16 bg-white border-t border-slate-200">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">Platform Capabilities</h2>
+        <p class="text-3xl font-extrabold text-slate-900 mt-2">Comprehensive ATS Audit Suite</p>
+        <p class="text-slate-500 text-sm mt-2">Enterprise-grade resume analysis driven by applied NLP algorithms and vector semantic search.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">🎯</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">ATS Compatibility</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Verifies whether resume structure complies with automated parser requirements without tables or obscure fonts.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">🔍</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Keyword Matching</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Extracts n-grams and technical terminology from Job Descriptions to compute strict intersection rates.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">🧠</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Skill Extraction</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Correlates candidate experience with an ontology of languages, frameworks, cloud stacks, and developer tools.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">📐</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Vector Space Alignment</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Calculates multi-dimensional Cosine angles across TF-IDF term vectors to determine true contextual similarity.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">📑</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Section Parsing</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Scans for standard headers including Contact, Education, Skills, Projects, Experience, and Certifications.</p>
+        </div>
+        <div class="border border-slate-200 rounded-xl p-6 bg-slate-50/50 hover:border-blue-300 transition">
+          <div class="w-10 h-10 bg-rose-100 text-rose-600 rounded-lg flex items-center justify-center font-bold text-lg mb-4">💡</div>
+          <h3 class="font-bold text-slate-900 text-base mb-2">Gap Remediation</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">Produces clear prioritized recommendations to guide the candidate in bridging critical qualification deficits.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="workflow" class="py-16 bg-slate-50 border-t border-slate-200">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center max-w-2xl mx-auto mb-12">
+        <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">Process Architecture</h2>
+        <p class="text-3xl font-extrabold text-slate-900 mt-2">How It Works in 4 Steps</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">1</div>
+          <h4 class="font-bold text-slate-900 text-sm mb-2">Upload Resume</h4>
+          <p class="text-xs text-slate-600">Candidate supplies PDF, DOCX, or TXT documents; text streams are parsed directly.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">2</div>
+          <h4 class="font-bold text-slate-900 text-sm mb-2">Job Description</h4>
+          <p class="text-xs text-slate-600">Target role scope, qualifications, and core requirements are provided.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">3</div>
+          <h4 class="font-bold text-slate-900 text-sm mb-2">NLP Vectorization</h4>
+          <p class="text-xs text-slate-600">Stopwords are eliminated, tokens regularized, and TF-IDF bi-gram matrix generated.</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+          <div class="w-8 h-8 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm mb-4">4</div>
+          <h4 class="font-bold text-slate-900 text-sm mb-2">Detailed Report</h4>
+          <p class="text-xs text-slate-600">Final multi-weighted score and actionable keyword gaps are delivered.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NLP Architecture Section -->
+  <section id="about" class="py-16 bg-white border-t border-slate-200">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="text-xs font-bold text-blue-600 uppercase tracking-widest">System Engine</h2>
+      <h3 class="text-2xl font-bold text-slate-900 mt-2">Natural Language Processing Pipeline</h3>
+      <p class="text-sm text-slate-600 mt-4 leading-relaxed">
+        Engineered for high-precision screening. Demonstrates the real-world application of multi-document tokenization, bi-gram n-gram vectorization, regular expression parsing, TF-IDF weights, and Cosine Vector Space angles to solve automated candidate evaluation.
+      </p>
+      
+      <div class="mt-8 flex flex-wrap justify-center gap-2 sm:gap-3 text-xs font-semibold text-slate-600 px-2 sm:px-4">
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">Python 3</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">Flask Microframework</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">Scikit-Learn</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">PyPDF & docx</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">Google OAuth 2.0</span>
+        <span class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">OTP Security</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer with Live GitHub Repo Link (Exact Original Maintained) -->
+  <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-auto text-xs">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <div class="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">⚡</div>
+        <p class="font-semibold text-slate-300">© 2026 SkillSync AI • Enterprise Resume Screener</p>
+      </div>
+      <div class="flex items-center gap-4 text-xs font-semibold">
+        <a href="https://github.com/mexterncr/ats-resume-evaluator" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg transition shadow-sm">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+          <span>GitHub Repository</span>
+        </a>
+        <span class="text-slate-600">•</span>
+        <span class="text-slate-500">MIT Open Source</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= AUTHENTICATION MODAL ================= -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 relative">
+      <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-bold text-lg">✕</button>
+      <h3 id="authModalTitle" class="text-xl font-bold text-slate-900 mb-1">Sign In</h3>
+      <p id="authModalSub" class="text-xs text-slate-500 mb-5">Sign in to save your resume evaluation audit history.</p>
+
+      <!-- Google Sign In Button Container -->
+      <div id="googleBtnContainer" class="mb-4 flex justify-center w-full">
+        <div id="g_id_onload"
+             data-client_id="{{ google_client_id }}"
+             data-callback="handleGoogleResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="g_id_signin" 
+             data-type="standard" 
+             data-shape="rectangular" 
+             data-theme="outline" 
+             data-text="signin_with" 
+             data-size="large" 
+             data-logo_alignment="left" 
+             data-width="320">
+        </div>
+      </div>
+
+      <div id="authDivider" class="relative my-4">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+        <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-semibold">Or with Email</span></div>
+      </div>
+
+      <div class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Email Address</label>
+          <div class="flex gap-2">
+            <input type="email" id="authEmail" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="recruiter@company.com">
+            <button type="button" id="sendOtpBtn" onclick="handleSendOTP()" class="hidden bg-slate-100 hover:bg-slate-200 text-blue-600 border border-slate-300 text-xs font-bold px-3 rounded-xl whitespace-nowrap transition">
+              Send Code
+            </button>
+          </div>
+        </div>
+
+        <div id="otpFieldContainer" class="hidden">
+          <label class="block text-xs font-bold text-blue-700 uppercase mb-1">6-Digit Verification Code</label>
+          <input type="text" id="authOtp" maxlength="6" class="w-full border border-blue-300 bg-blue-50/50 rounded-xl p-2.5 text-center text-base tracking-widest font-mono font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="••••••">
+          <span id="demoOtpBadge" class="text-[11px] text-slate-500 font-medium mt-1 block"></span>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label id="authPasswordLabel" class="block text-xs font-bold text-slate-700 uppercase">Password</label>
+            <button type="button" id="forgotPassLink" onclick="openAuthModal('forgot')" class="text-[11px] text-blue-600 font-semibold hover:underline">Forgot password?</button>
+          </div>
+          <input type="password" id="authPassword" class="w-full border border-slate-300 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="••••••••">
+        </div>
+
+        <div id="authError" class="hidden text-xs font-semibold text-rose-600"></div>
+        <div id="authSuccess" class="hidden text-xs font-semibold text-emerald-600"></div>
+
+        <button type="button" id="authSubmitBtn" onclick="submitAuthForm()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition text-sm shadow-md">
+          Sign In
+        </button>
+
+        <p class="text-xs text-center text-slate-500 pt-2">
+          <span id="authToggleText">Don't have an account?</span>
+          <button type="button" onclick="toggleAuthMode()" id="authToggleBtn" class="text-blue-600 font-bold hover:underline ml-1">Create one</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCAN HISTORY MODAL ================= -->
+  <div id="historyModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-5xl w-full p-6 shadow-2xl border border-slate-200 relative max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <span>📜</span> Personal Resume Evaluation History
+          </h3>
+          <p class="text-xs text-slate-500">Persistent database audit log stored in your account session.</p>
+        </div>
+        <button onclick="closeHistoryModal()" class="text-slate-400 hover:text-slate-600 font-bold text-xl px-2">✕</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1 mt-4">
+        <table class="w-full text-left text-xs text-slate-600">
+          <thead class="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold sticky top-0">
+            <tr>
+              <th class="p-2.5">Date & Time</th>
+              <th class="p-2.5">Candidate Name</th>
+              <th class="p-2.5">Resume File</th>
+              <th class="p-2.5">Target Role</th>
+              <th class="p-2.5 text-center">Status</th>
+              <th class="p-2.5 text-center">ATS Score</th>
+              <th class="p-2.5 text-center">Similarity</th>
+              <th class="p-2.5 text-center">Skills</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+        <div id="historyEmptyState" class="hidden text-center py-12 text-slate-400 text-xs">
+          No evaluations stored yet. Run an analysis while logged in to view records here.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script Logic -->
+  <script>
+    let isDemoMode = false;
+    let globalBatchResults = [];
+    let currentActiveIndex = 0;
+    let currentAuthMode = 'login';
+
+    const EMAIL_REGEX = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
+
+    // Toast Notification Dispatcher
+    function showToast(message, type = 'error') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold toast-animate ${
+        type === 'error' ? 'bg-rose-900/90 text-white border-rose-700 backdrop-blur-md' : 'bg-slate-900/90 text-white border-slate-700 backdrop-blur-md'
+      }`;
+      toast.innerHTML = `
+        <span>${type === 'error' ? '⚠️' : '⚡'}</span>
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()" class="ml-2 text-slate-400 hover:text-white font-bold">✕</button>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.4s ease';
+        setTimeout(() => toast.remove(), 400);
+      }, 4000);
+    }
+
+    // Inline Alert Dispatcher
+    function showInlineAlert(message) {
+      const alertBox = document.getElementById('formInlineAlert');
+      const alertText = document.getElementById('formInlineAlertText');
+      alertText.textContent = message;
+      alertBox.classList.remove('hidden');
+      alertBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function hideInlineAlert() {
+      const alertBox = document.getElementById('formInlineAlert');
+      alertBox.classList.add('hidden');
+    }
+
+    // Strict Client-Side Candidate Name Sanitizer
+    function getCleanCandidateName(rawName, filename) {
+      const NOISE_WORDS = [
+        'mumbai', 'maharashtra', 'delhi', 'bangalore', 'pune', 'india', 
+        'email', 'com', 'gmail', 'phone', 'contact', 'resume', 'cv', 
+        'profile', 'senior', 'junior', 'executive', 'updated', 'final', 
+        'doc', 'untitled', 'document', 'developer', 'engineer', 'analyst'
+      ];
+
+      let candidateStr = (rawName || '').trim();
+
+      let isContaminated = false;
+      if (candidateStr) {
+        let low = candidateStr.toLowerCase();
+        if (NOISE_WORDS.some(w => low.includes(w)) || low.includes('@') || /\d/.test(candidateStr)) {
+          isContaminated = true;
+        }
+      }
+
+      if (candidateStr && !isContaminated && candidateStr.toLowerCase() !== 'candidate') {
+        let parts = candidateStr.split(/\s+/).filter(w => !NOISE_WORDS.includes(w.toLowerCase()));
+        if (parts.length >= 2) {
+          return parts.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        }
+      }
+
+      let base = (filename || 'Candidate').replace(/\.[^/.]+$/, '');
+      base = base.replace(/\(\d+\)/g, '');
+      let segments = base.split(/[-_]/);
+      let namePart = segments[0].trim();
+      let tokens = namePart.split(/\s+/).filter(t => !NOISE_WORDS.includes(t.toLowerCase()) && !/\d/.test(t));
+      
+      if (tokens.length >= 2) {
+        return tokens.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+      }
+
+      return 'Candidate';
+    }
+
+    const resumeFileInput = document.getElementById('resumeFile');
+    const fileText = document.getElementById('fileText');
+    const jdInput = document.getElementById('jdInput');
+    const jdWordCount = document.getElementById('jdWordCount');
+    const demoBtn = document.getElementById('demoBtn');
+    const roleSelector = document.getElementById('roleSelector');
+    const evalForm = document.getElementById('evalForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const resultsCard = document.getElementById('resultsCard');
+
+    const PRESET_ROLES = {
+      software_engineer: "Looking for a Junior Software Engineer with hands-on proficiency in Python, Flask, SQL, and REST APIs. Candidate should know Git version control, Docker fundamentals, and basic Data Structures. Experience with machine learning or scikit-learn is a plus.",
+      data_scientist: "Seeking a Data Scientist with expertise in Python, SQL, Machine Learning, Deep Learning, Pandas, and NumPy. Familiarity with PyTorch, TensorFlow, Scikit-Learn, and NLP pipelines is required. Experience with data structures and Docker is preferred.",
+      frontend_dev: "Hiring a Frontend Web Developer with solid foundations in HTML, CSS, JavaScript, TypeScript, React, and Vue. Must have good understanding of REST APIs, Git, responsive design, and state management."
+    };
+
+    roleSelector.addEventListener('change', (e) => {
+      const selected = PRESET_ROLES[e.target.value];
+      if (selected) {
+        jdInput.value = selected;
+        updateWordCount();
+        hideInlineAlert();
+      }
+    });
+
+    function updateWordCount() {
+      const words = jdInput.value.trim() ? jdInput.value.trim().split(/\s+/).length : 0;
+      jdWordCount.textContent = words + " words";
+    }
+
+    jdInput.addEventListener('input', () => {
+      updateWordCount();
+      hideInlineAlert();
+    });
+
+    resumeFileInput.addEventListener('change', () => {
+      hideInlineAlert();
+      if (resumeFileInput.files.length > 1) {
+        fileText.textContent = `✓ ${resumeFileInput.files.length} Documents Selected`;
+        isDemoMode = false;
+      } else if (resumeFileInput.files.length === 1) {
+        fileText.textContent = "✓ " + resumeFileInput.files[0].name;
+        isDemoMode = false;
+      }
+    });
+
+    demoBtn.addEventListener('click', () => {
+      hideInlineAlert();
+      isDemoMode = true;
+      resumeFileInput.value = "";
+      jdInput.value = PRESET_ROLES.software_engineer;
+      updateWordCount();
+      fileText.textContent = "⚡ Sample_CS_Resume.pdf (Preloaded Demo)";
+      showToast("Demo datasets preloaded successfully.", "info");
+    });
+
+    async function checkAuthStatus() {
+      try {
+        const res = await fetch('/api/auth/status');
+        const data = await res.json();
+        if (data.logged_in) {
+          document.getElementById('guestNav').classList.add('hidden');
+          document.getElementById('userNav').classList.remove('hidden');
+          document.getElementById('userEmailBadge').textContent = data.email;
+          document.getElementById('userScanCount').textContent = data.scan_count;
+        } else {
+          document.getElementById('guestNav').classList.remove('hidden');
+          document.getElementById('userNav').classList.add('hidden');
+        }
+      } catch (e) {
+        console.error("Auth status sync error:", e);
+      }
+    }
+
+    async function handleGoogleResponse(response) {
+      try {
+        const res = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ credential: response.credential })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          closeAuthModal();
+          checkAuthStatus();
+          showToast("Signed in via Google successfully.", "info");
+        } else {
+          showToast(data.error || "Google Sign-In failed.");
+        }
+      } catch (err) {
+        showToast("Google Authentication network error.");
+      }
+    }
+
+    function openAuthModal(mode) {
+      currentAuthMode = mode;
+      document.getElementById('authError').classList.add('hidden');
+      document.getElementById('authSuccess').classList.add('hidden');
+      document.getElementById('authEmail').value = '';
+      document.getElementById('authPassword').value = '';
+      document.getElementById('authOtp').value = '';
+      document.getElementById('demoOtpBadge').textContent = '';
+
+      const googleContainer = document.getElementById('googleBtnContainer');
+      const divider = document.getElementById('authDivider');
+      const sendOtpBtn = document.getElementById('sendOtpBtn');
+      const otpContainer = document.getElementById('otpFieldContainer');
+      const forgotLink = document.getElementById('forgotPassLink');
+      const passLabel = document.getElementById('authPasswordLabel');
+
+      if (mode === 'login') {
+        document.getElementById('authModalTitle').textContent = 'Sign In';
+        document.getElementById('authModalSub').textContent = 'Access your personal resume audit history.';
+        document.getElementById('authSubmitBtn').textContent = 'Sign In';
+        document.getElementById('authToggleText').textContent = "Don't have an account?";
+        document.getElementById('authToggleBtn').textContent = 'Create one';
+        passLabel.textContent = 'Password';
+        googleContainer.classList.remove('hidden');
+        divider.classList.remove('hidden');
+        sendOtpBtn.classList.add('hidden');
+        otpContainer.classList.add('hidden');
+        forgotLink.classList.remove('hidden');
+      } else if (mode === 'register') {
+        document.getElementById('authModalTitle').textContent = 'Create Account';
+        document.getElementById('authModalSub').textContent = 'Verify your email with a 6-digit code.';
+        document.getElementById('authSubmitBtn').textContent = 'Verify & Register';
+        document.getElementById('authToggleText').textContent = 'Already have an account?';
+        document.getElementById('authToggleBtn').textContent = 'Sign In';
+        passLabel.textContent = 'Choose Password';
+        googleContainer.classList.remove('hidden');
+        divider.classList.remove('hidden');
+        sendOtpBtn.classList.remove('hidden');
+        otpContainer.classList.remove('hidden');
+        forgotLink.classList.add('hidden');
+      } else if (mode === 'forgot') {
+        document.getElementById('authModalTitle').textContent = 'Reset Password';
+        document.getElementById('authModalSub').textContent = 'Enter email to receive reset verification code.';
+        document.getElementById('authSubmitBtn').textContent = 'Update Password';
+        document.getElementById('authToggleText').textContent = 'Remembered your password?';
+        document.getElementById('authToggleBtn').textContent = 'Sign In';
+        passLabel.textContent = 'New Password';
+        googleContainer.classList.add('hidden');
+        divider.classList.add('hidden');
+        sendOtpBtn.classList.remove('hidden');
+        otpContainer.classList.remove('hidden');
+        forgotLink.classList.add('hidden');
+      }
+
+      document.getElementById('authModal').classList.remove('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.add('hidden');
+    }
+
+    function toggleAuthMode() {
+      openAuthModal(currentAuthMode === 'login' ? 'register' : 'login');
+    }
+
+    async function handleSendOTP() {
+      const email = document.getElementById('authEmail').value.trim();
+      const errBox = document.getElementById('authError');
+      const successBox = document.getElementById('authSuccess');
+      errBox.classList.add('hidden');
+      successBox.classList.add('hidden');
+
+      if (!email || !EMAIL_REGEX.test(email)) {
+        errBox.textContent = "Please enter a valid email address (e.g. name@gmail.com).";
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      const sendBtn = document.getElementById('sendOtpBtn');
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Sending...";
+
+      try {
+        const purpose = currentAuthMode === 'forgot' ? 'forgot' : 'register';
+        const res = await fetch('/api/auth/send-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, purpose })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          successBox.textContent = data.message;
+          successBox.classList.remove('hidden');
+          document.getElementById('authOtp').value = '';
+          document.getElementById('demoOtpBadge').textContent = 'Enter the 6-digit code received on your email.';
+        } else {
+          errBox.textContent = data.error || "Failed to send verification code.";
+          errBox.classList.remove('hidden');
+        }
+      } catch (e) {
+        errBox.textContent = "Network error sending verification code.";
+        errBox.classList.remove('hidden');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = "Send Code";
+      }
+    }
+
+    async function submitAuthForm() {
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value.trim();
+      const otp = document.getElementById('authOtp').value.trim();
+      const errBox = document.getElementById('authError');
+      const successBox = document.getElementById('authSuccess');
+      errBox.classList.add('hidden');
+      successBox.classList.add('hidden');
+
+      if (!email || !EMAIL_REGEX.test(email)) {
+        errBox.textContent = "Please enter a valid email address (e.g. name@gmail.com).";
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      if (!password) {
+        errBox.textContent = "Password is required.";
+        errBox.classList.remove('hidden');
+        return;
+      }
+
+      if (currentAuthMode === 'login') {
+        try {
+          const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            closeAuthModal();
+            checkAuthStatus();
+            showToast("Successfully logged in.", "info");
+          } else {
+            errBox.textContent = data.error || "Login failed.";
+            errBox.classList.remove('hidden');
+          }
+        } catch (err) {
+          errBox.textContent = "Server communication failure.";
+          errBox.classList.remove('hidden');
+        }
+      } else if (currentAuthMode === 'register') {
+        if (!otp) {
+          errBox.textContent = "Please enter the 6-digit verification code.";
+          errBox.classList.remove('hidden');
+          return;
+        }
+        try {
+          const res = await fetch('/api/auth/verify-register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, otp })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            closeAuthModal();
+            checkAuthStatus();
+            showToast("Account successfully registered!", "info");
+          } else {
+            errBox.textContent = data.error || "Registration failed.";
+            errBox.classList.remove('hidden');
+          }
+        } catch (err) {
+          errBox.textContent = "Server communication failure.";
+          errBox.classList.remove('hidden');
+        }
+      } else if (currentAuthMode === 'forgot') {
+        if (!otp) {
+          errBox.textContent = "Please enter the 6-digit verification code.";
+          errBox.classList.remove('hidden');
+          return;
+        }
+        try {
+          const res = await fetch('/api/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp, new_password: password })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            successBox.textContent = data.message;
+            successBox.classList.remove('hidden');
+            setTimeout(() => openAuthModal('login'), 1200);
+          } else {
+            errBox.textContent = data.error || "Reset password failed.";
+            errBox.classList.remove('hidden');
+          }
+        } catch (err) {
+          errBox.textContent = "Server communication failure.";
+          errBox.classList.remove('hidden');
+        }
+      }
+    }
+
+    async function handleLogout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      checkAuthStatus();
+      showToast("Logged out successfully.", "info");
+    }
+
+    async function openHistoryModal() {
+      const modal = document.getElementById('historyModal');
+      const tbody = document.getElementById('historyTableBody');
+      const emptyState = document.getElementById('historyEmptyState');
+      tbody.innerHTML = '';
+
+      try {
+        const res = await fetch('/api/history');
+        const data = await res.json();
+
+        if (res.ok && data.history && data.history.length > 0) {
+          emptyState.classList.add('hidden');
+          tbody.innerHTML = data.history.map(s => {
+            const cleanName = getCleanCandidateName(s.candidate_name, s.filename);
+            return `
+              <tr class="hover:bg-slate-50 transition">
+                <td class="p-2.5 text-slate-400 whitespace-nowrap text-[11px]">${s.timestamp}</td>
+                <td class="p-2.5 font-bold text-slate-900">${cleanName}</td>
+                <td class="p-2.5 font-medium text-slate-600 truncate max-w-[180px]">${s.filename}</td>
+                <td class="p-2.5 text-slate-500">${s.role_title}</td>
+                <td class="p-2.5 text-center">${getBadgeHTML(s.status)}</td>
+                <td class="p-2.5 text-center font-bold text-blue-700">${s.ats_score}%</td>
+                <td class="p-2.5 text-center">${s.similarity}%</td>
+                <td class="p-2.5 text-center">${s.skill_score}%</td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          emptyState.classList.remove('hidden');
+        }
+        modal.classList.remove('hidden');
+      } catch (e) {
+        showToast("Failed to load evaluation history.");
+      }
+    }
+
+    function closeHistoryModal() {
+      document.getElementById('historyModal').classList.add('hidden');
+    }
+
+    // ---------------- REPORT & LEADERBOARD RENDERING ---------------- //
+    function getBadgeHTML(status) {
+      if (status === "Shortlisted") {
+        return '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-300">✓ Shortlisted</span>';
+      } else if (status === "Potential Match" || status === "Under Review") {
+        return '<span class="bg-amber-100 text-amber-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-amber-300">⚡ Potential Match</span>';
+      } else {
+        return '<span class="bg-rose-100 text-rose-800 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border border-rose-300">✗ Rejected</span>';
+      }
+    }
+
+    function renderCandidateDetails(index) {
+      currentActiveIndex = index;
+      const report = globalBatchResults[index];
+      if (!report) return;
+
+      const cleanName = getCleanCandidateName(report.candidate_name, report.filename);
+      document.getElementById('resFilename').textContent = `${cleanName} — ${report.filename}`;
+      document.getElementById('resTime').textContent = report.timestamp;
+      document.getElementById('mScore').textContent = report.ats_score + "%";
+      document.getElementById('mSim').textContent = report.similarity + "%";
+      document.getElementById('mSkill').textContent = report.skill_score + "%";
+      document.getElementById('mSec').textContent = report.sec_score + "%";
+
+      const badge = document.getElementById('mStatusBadge');
+      if (report.status === "Shortlisted") {
+        badge.className = "inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1 bg-emerald-100 text-emerald-800 border border-emerald-300";
+        badge.textContent = "✓ Shortlisted";
+      } else if (report.status === "Potential Match" || report.status === "Under Review") {
+        badge.className = "inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1 bg-amber-100 text-amber-800 border border-amber-300";
+        badge.textContent = "⚡ Potential Match";
+      } else {
+        badge.className = "inline-block text-[11px] font-bold px-2 py-0.5 rounded-full mt-1 bg-rose-100 text-rose-800 border border-rose-300";
+        badge.textContent = "✗ Rejected";
+      }
+
+      const matchBox = document.getElementById('matchedTags');
+      matchBox.innerHTML = report.matched_skills.length 
+        ? report.matched_skills.map(s => `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
+        : '<span class="text-xs text-slate-400">No direct matches detected.</span>';
+
+      const missBox = document.getElementById('missingTags');
+      missBox.innerHTML = report.missing_skills.length
+        ? report.missing_skills.map(s => `<span class="bg-rose-50 text-rose-700 border border-rose-200 text-xs px-2.5 py-1 rounded-full font-semibold mono">${s.toUpperCase()}</span>`).join('')
+        : '<span class="text-xs text-emerald-600 font-medium">All target skills detected in resume.</span>';
+
+      const secBox = document.getElementById('sectionAudit');
+      secBox.innerHTML = Object.entries(report.sections).map(([sec, found]) => `
+        <div class="flex items-center justify-between py-1.5 border-b border-slate-50 last:border-none">
+          <span class="text-slate-600 font-medium">${sec}</span>
+          <span class="${found ? 'text-emerald-600' : 'text-rose-500'} font-bold text-xs">${found ? '✓ Detected' : '✗ Missing'}</span>
+        </div>
+      `).join('');
+
+      document.querySelectorAll('#batchTableBody tr').forEach((tr, i) => {
+        if (i === index) {
+          tr.classList.add('bg-blue-100/70', 'ring-1', 'ring-blue-400');
+        } else {
+          tr.classList.remove('bg-blue-100/70', 'ring-1', 'ring-blue-400');
+        }
+      });
+    }
+
+    function exportLeaderboardExcel() {
+      if (!globalBatchResults.length) return;
+      const dataRows = globalBatchResults.map((r, i) => ({
+        "Rank": i + 1,
+        "Candidate Name": getCleanCandidateName(r.candidate_name, r.filename),
+        "Resume Document": r.filename,
+        "Status": r.status,
+        "ATS Score (%)": r.ats_score,
+        "Similarity (%)": r.similarity,
+        "Skills Match (%)": r.skill_score,
+        "Section Audit (%)": r.sec_score,
+        "Matched Skills": r.matched_skills.join(", "),
+        "Missing Skills": r.missing_skills.join(", "),
+        "Timestamp": r.timestamp
+      }));
+      const worksheet = XLSX.utils.json_to_sheet(dataRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "ATS Leaderboard");
+      XLSX.writeFile(workbook, `SkillSync_Leaderboard_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    function exportLeaderboardPDF() {
+      if (!globalBatchResults.length) return;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'pt', 'a4');
+      doc.setFontSize(16);
+      doc.setTextColor(30, 41, 59);
+      doc.text("SkillSync AI — Candidate ATS Leaderboard Report", 40, 45);
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Generated on: ${new Date().toLocaleString()} | Evaluated Candidates: ${globalBatchResults.length}`, 40, 62);
+
+      const tableData = globalBatchResults.map((r, i) => [
+        `#${i + 1}`,
+        getCleanCandidateName(r.candidate_name, r.filename),
+        r.filename,
+        r.status,
+        `${r.ats_score}%`,
+        `${r.similarity}%`,
+        `${r.skill_score}%`,
+        `${r.sec_score}%`
+      ]);
+
+      doc.autoTable({
+        startY: 75,
+        head: [['Rank', 'Candidate Name', 'Resume File', 'Status', 'ATS Score', 'Similarity', 'Skills', 'Sections']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 8, cellPadding: 6 }
+      });
+      doc.save(`SkillSync_Leaderboard_${new Date().toISOString().slice(0,10)}.pdf`);
+    }
+
+    function exportLeaderboardCSV() {
+      if (!globalBatchResults.length) return;
+      let csvContent = "data:text/csv;charset=utf-8,Rank,Candidate Name,Resume File,Status,ATS Score,Semantic Similarity,Skills Match,Section Score\n";
+      globalBatchResults.forEach((res, idx) => {
+        const name = getCleanCandidateName(res.candidate_name, res.filename);
+        csvContent += `${idx + 1},"${name}","${res.filename}",${res.status},${res.ats_score}%,${res.similarity}%,${res.skill_score}%,${res.sec_score}%\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `SkillSync_Leaderboard_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function exportLeaderboardJSON() {
+      if (!globalBatchResults.length) return;
+      const formattedResults = globalBatchResults.map(r => ({
+        ...r,
+        candidate_name: getCleanCandidateName(r.candidate_name, r.filename)
+      }));
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(formattedResults, null, 2));
+      const link = document.createElement("a");
+      link.setAttribute("href", dataStr);
+      link.setAttribute("download", `SkillSync_Audit_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function exportCandidateDoc() {
+      const report = globalBatchResults[currentActiveIndex];
+      if (!report) return;
+
+      const cleanName = getCleanCandidateName(report.candidate_name, report.filename);
+      const htmlContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>ATS Evaluation Audit</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #1e293b; }
+          h1 { color: #2563eb; }
+          table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+          th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; }
+          th { background-color: #f1f5f9; }
+        </style>
+        </head>
+        <body>
+          <h1>SkillSync AI — Candidate Audit Report</h1>
+          <p><strong>Candidate Name:</strong> ${cleanName}</p>
+          <p><strong>Candidate File:</strong> ${report.filename}</p>
+          <p><strong>Audit Timestamp:</strong> ${report.timestamp}</p>
+          <p><strong>Decision Status:</strong> ${report.status}</p>
+          <hr/>
+          <h3>Performance Metrics</h3>
+          <table>
+            <tr><th>Metric</th><th>Score</th></tr>
+            <tr><td>Overall ATS Score</td><td><b>${report.ats_score}%</b></td></tr>
+            <tr><td>Semantic Similarity (TF-IDF Cosine)</td><td>${report.similarity}%</td></tr>
+            <tr><td>Target Technical Skills Match</td><td>${report.skill_score}%</td></tr>
+            <tr><td>Structural Section Formatting</td><td>${report.sec_score}%</td></tr>
+          </table>
+          <h3>Domain Skills Breakdown</h3>
+          <p><b>Matched Skills:</b> ${report.matched_skills.join(', ') || 'None detected'}</p>
+          <p><b>Missing Target Skills:</b> ${report.missing_skills.join(', ') || 'None (100% matched)'}</p>
+          <h3>Structural Sections Audit</h3>
+          <ul>
+            ${Object.entries(report.sections).map(([sec, found]) => `<li><b>${sec}:</b>${found ? 'Detected' : 'Missing'}</li>`).join('')}
+          </ul>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff' + htmlContent], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${cleanName.replace(/\s+/g, '_')}_ATS_Audit.doc`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    evalForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideInlineAlert();
+      const jd = jdInput.value.trim();
+      const files = resumeFileInput.files;
+
+      if (!jd) {
+        showInlineAlert("Please provide or select a target Job Description before submitting.");
+        showToast("Job Description is required.", "error");
+        jdInput.focus();
+        return;
+      }
+      if (files.length === 0 && !isDemoMode) {
+        showInlineAlert("Please upload candidate resume documents (.PDF, .DOCX, or .TXT) or click 'Demo Data'.");
+        showToast("Resume document(s) missing.", "error");
+        return;
+      }
+
+      // Loader Activate & Previous Results Hide
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `
+        <span class="inline-flex items-center gap-2">
+          <svg class="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          Executing NLP Vectors & Metric Computation...
+        </span>
+      `;
+
+      const loadingPanel = document.getElementById('evaluationLoadingState');
+      resultsCard.classList.add('hidden');
+      loadingPanel.classList.remove('hidden');
+      loadingPanel.scrollIntoView({ behavior: 'smooth' });
+
+      const roleSelectedText = roleSelector.options[roleSelector.selectedIndex].text;
+      const formData = new FormData();
+      formData.append('job_desc', jd);
+      formData.append('role_name', roleSelector.value ? roleSelectedText : 'Custom Position');
+      formData.append('is_demo', isDemoMode);
+      if (files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          formData.append('resume_file', files[i]);
+        }
+      }
+
+      try {
+        const response = await fetch('/analyze', { method: 'POST', body: formData });
+        const data = await response.json();
+
+        if (response.ok) {
+          globalBatchResults = data.results || [data];
+          const isBatch = globalBatchResults.length > 1;
+
+          const batchTableCard = document.getElementById('batchTableCard');
+          const batchTableBody = document.getElementById('batchTableBody');
+          
+          if (batchTableCard && batchTableBody) {
+            if (isBatch) {
+              batchTableBody.innerHTML = globalBatchResults.map((res, idx) => {
+                const cleanName = getCleanCandidateName(res.candidate_name, res.filename);
+                return `
+                  <tr onclick="renderCandidateDetails(${idx})" class="cursor-pointer hover:bg-blue-50/50 transition-colors ${idx === 0 ? 'bg-blue-100/70 ring-1 ring-blue-400 font-semibold' : ''}">
+                    <td class="p-3 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#${idx+1}`))}</td>
+                    <td class="p-3 font-bold text-slate-900">${cleanName}</td>
+                    <td class="p-3 font-medium text-slate-600 truncate max-w-[200px]">${res.filename}</td>
+                    <td class="p-3 text-center">${getBadgeHTML(res.status)}</td>
+                    <td class="p-3 text-center font-extrabold text-blue-600">${res.ats_score}%</td>
+                    <td class="p-3 text-center text-slate-600">${res.similarity}%</td>
+                    <td class="p-3 text-center text-slate-600">${res.skill_score}%</td>
+                    <td class="p-3 text-center text-slate-600">${res.sec_score}%</td>
+                  </tr>
+                `;
+              }).join('');
+              batchTableCard.style.display = 'block';
+            } else {
+              batchTableCard.style.display = 'none';
+            }
+          }
+
+          renderCandidateDetails(0);
+          checkAuthStatus();
+
+          // Loader Hide & Show Results
+          loadingPanel.classList.add('hidden');
+          resultsCard.classList.remove('hidden');
+          resultsCard.scrollIntoView({ behavior: 'smooth' });
+          showToast(`Evaluation complete for ${globalBatchResults.length} document(s).`, "info");
+        } else {
+          loadingPanel.classList.add('hidden');
+          showInlineAlert(data.error || "Evaluation process error.");
+          showToast(data.error || "Evaluation failed.", "error");
+        }
+      } catch (err) {
+        loadingPanel.classList.add('hidden');
+        showInlineAlert("Server communication failure: " + err.message);
+        showToast("Server connection error.", "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "🚀 Run Comprehensive ATS Evaluation";
+      }
+    });
+
+    // ---------------- AI STUDIO INTEGRATION ---------------- //
+    function navigateToStudio() {
+      const currentResult = (typeof globalBatchResults !== 'undefined' && globalBatchResults.length > currentActiveIndex)
+        ? globalBatchResults[currentActiveIndex] 
+        : null;
+
+      const missingSecs = currentResult 
+        ? Object.keys(currentResult.sections || {}).filter(k => !currentResult.sections[k]) 
+        : ['Experience'];
+
+      const missingSkills = currentResult 
+        ? (currentResult.missing_skills || []) 
+        : ['Docker'];
+
+      const candidateName = currentResult 
+        ? getCleanCandidateName(currentResult.candidate_name, currentResult.filename) 
+        : 'Candidate';
+
+      sessionStorage.setItem('skillsync_gap_data', JSON.stringify({
+        candidate_name: candidateName,
+        role_name: document.getElementById('roleSelector') ? document.getElementById('roleSelector').value : 'software_engineer',
+        jd: document.getElementById('jdInput') ? document.getElementById('jdInput').value : '',
+        missing_skills: missingSkills,
+        missing_sections: missingSecs
+      }));
+
+      window.location.href = '/builder';
+    }
+
+    checkAuthStatus();
+  </script>
+</body>
+</html>

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillSync AI — Dynamic ATS Resume Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    
+    /* Base sheet sizing */
+    .resume-sheet {
+      line-height: 1.35;
+      transition: all 0.2s ease-in-out;
+    }
+
+    /* Pattern 1: Classic Ivy ATS (Default) */
+    .pattern-classic {
+      font-family: 'Times New Roman', Times, serif;
+      color: #000000;
+    }
+    .pattern-classic .sec-header {
+      text-align: center;
+      border-bottom: 1.5px solid #000000;
+      padding-bottom: 10px;
+    }
+    .pattern-classic .sec-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #000000;
+      padding-bottom: 2px;
+      margin-top: 14px;
+      margin-bottom: 6px;
+    }
+
+    /* Pattern 2: Modern Minimalist Tech */
+    .pattern-modern {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #0f172a;
+    }
+    .pattern-modern .sec-header {
+      text-align: left;
+      border-bottom: 2.5px solid #2563eb;
+      padding-bottom: 12px;
+    }
+    .pattern-modern .sec-header h1 {
+      color: #1e3a8a;
+      letter-spacing: -0.02em;
+    }
+    .pattern-modern .sec-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #2563eb;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 3px;
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+
+    /* Pattern 3: Executive Corporate */
+    .pattern-executive {
+      font-family: 'Merriweather', Georgia, serif;
+      color: #111827;
+    }
+    .pattern-executive .sec-header {
+      text-align: center;
+      border-top: 4px solid #0f172a;
+      border-bottom: 1px solid #64748b;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    .pattern-executive .sec-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #0f172a;
+      border-bottom: 1.5px solid #0f172a;
+      padding-bottom: 2px;
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-500/20">⚡</div>
+          <span class="text-lg font-bold text-slate-900 tracking-tight">SkillSync<span class="text-blue-600">.ai</span></span>
+        </a>
+        <span class="text-xs px-2.5 py-1 bg-purple-50 text-purple-700 font-semibold border border-purple-200 rounded-full">AI Resume Builder</span>
+      </div>
+      <a href="/" class="text-xs font-semibold text-slate-600 hover:text-blue-600 transition flex items-center gap-1">
+        ← Back to ATS Workspace
+      </a>
+    </div>
+  </header>
+
+  <!-- Workspace Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <!-- Left Column: Form -->
+      <div class="lg:col-span-5 space-y-5">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-h-[85vh] overflow-y-auto">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span>📝</span> Candidate Details & Qualifications
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">Enter your credentials manually or use the AI prompt assistant to generate an ATS-optimized draft.</p>
+
+          <!-- AI PROMPT ASSISTANT BOX -->
+          <div class="mt-4 p-4 bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 rounded-xl border border-purple-200 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-extrabold text-purple-900 flex items-center gap-1.5 uppercase tracking-wide">
+                <span>✨</span> AI Prompt Assistant
+              </label>
+              <span class="text-[10px] bg-purple-200/60 text-purple-800 font-bold px-2 py-0.5 rounded-full">Automated Synthesis</span>
+            </div>
+            <textarea id="aiPromptInput" rows="3" class="w-full text-xs p-2.5 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 bg-white placeholder:text-slate-400" placeholder="e.g., Computer Science graduate targeting a Junior Full-Stack Developer role. Proficient in Python, Flask, SQL, and Docker, with a completed backend engineering internship and key academic projects."></textarea>
+            <button type="button" id="btnRunAi" onclick="generateWithAI()" style="background: linear-gradient(to right, #9333ea, #4f46e5); color: #ffffff;" class="w-full py-2.5 text-white rounded-lg text-xs font-bold shadow-md transition flex items-center justify-center gap-2">
+              <span>⚡</span> Generate Resume via AI Instruction
+            </button>
+          </div>
+
+          <form id="builderForm" class="mt-4 space-y-4 text-xs">
+            <!-- 1. Contact Information -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">1. Contact Information</span>
+              <div>
+                <label class="block text-slate-600 font-medium mb-1">Full Name</label>
+                <input type="text" id="fName" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500 font-semibold" value="John Doe">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-600 font-medium mb-1">Email</label>
+                  <input type="email" id="fEmail" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="johndoe@email.com">
+                </div>
+                <div>
+                  <label class="block text-slate-600 font-medium mb-1">Phone Number</label>
+                  <input type="text" id="fPhone" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="+1 (555) 019-2834">
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-600 font-medium mb-1">Location</label>
+                  <input type="text" id="fLocation" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="New York, NY">
+                </div>
+                <div>
+                  <label class="block text-slate-600 font-medium mb-1">Target Job Role</label>
+                  <input type="text" id="fRole" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500 font-semibold" value="Software Engineer">
+                </div>
+              </div>
+              <div>
+                <label class="block text-slate-600 font-medium mb-1">Profiles (LinkedIn / GitHub)</label>
+                <input type="text" id="fLinks" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="linkedin.com/in/johndoe • github.com/johndoe">
+              </div>
+            </div>
+
+            <!-- 2. Education -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">2. Education & Qualification</span>
+              <div>
+                <label class="block text-slate-600 font-medium mb-1">Degree Title</label>
+                <input type="text" id="fDegree" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500 font-medium" value="Bachelor of Science in Computer Science">
+              </div>
+              <div>
+                <label class="block text-slate-600 font-medium mb-1">College / University Name</label>
+                <input type="text" id="fCollege" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="State University of Technology • New York, NY">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-600 font-medium mb-1">Passing Year</label>
+                  <input type="text" id="fGradYear" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="Expected May 2026">
+                </div>
+                <div>
+                  <label class="block text-slate-600 font-medium mb-1">CGPA / Percentage</label>
+                  <input type="text" id="fCgpa" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="CGPA: 3.8 / 4.0">
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Technical Skills -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">3. Technical Skills</span>
+              <textarea id="fSkills" rows="2" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" placeholder="Python, SQL, Flask, Git, Docker, REST APIs, Data Structures, HTML, CSS, JavaScript"></textarea>
+            </div>
+
+            <!-- 4. Work / Internship Experience -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">4. Work / Internship Experience</span>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="block text-slate-600 font-medium mb-1">Job Title</label>
+                  <input type="text" id="fExpTitle" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="Software Engineering Intern">
+                </div>
+                <div>
+                  <label class="block text-slate-600 font-medium mb-1">Duration</label>
+                  <input type="text" id="fExpDuration" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="June 2025 – Present">
+                </div>
+              </div>
+              <div>
+                <label class="block text-slate-600 font-medium mb-1">Company & City</label>
+                <input type="text" id="fExpCompany" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="Apex Global Tech Solutions • New York, NY">
+              </div>
+              <div>
+                <label class="block text-slate-600 font-medium mb-1">Work Done / Achievements (Separate lines with newlines)</label>
+                <textarea id="fExpBullets" rows="3" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500"></textarea>
+              </div>
+            </div>
+
+            <!-- 5. Projects -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">5. Projects</span>
+              <div>
+                <label class="block text-slate-600 font-medium mb-1">Project Name & Technologies</label>
+                <input type="text" id="fProjTitle" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="SkillSync AI — ATS Resume Screening & Evaluation Platform (Python, Flask, NLP)">
+              </div>
+              <div>
+                <label class="block text-slate-600 font-medium mb-1">Project Work / Highlights</label>
+                <textarea id="fProjBullets" rows="2" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500"></textarea>
+              </div>
+            </div>
+
+            <button type="button" id="btnUpdateResume" onclick="updateLiveResume()" class="w-full py-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white rounded-xl text-xs font-bold shadow-md hover:opacity-95 transition flex items-center justify-center gap-2">
+              <span>⚡</span> Apply Details & Generate ATS Resume
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Sheet Preview -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 bg-white px-5 py-3 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-xs font-bold text-slate-700">Real-Time ATS Document Preview</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <!-- Pattern Switcher Dropdown -->
+            <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1">
+              <span class="text-[11px] font-bold text-slate-500">Pattern:</span>
+              <select id="templateSelector" onchange="changeTemplate(this.value)" class="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer">
+                <option value="classic">1. Classic ATS (Ivy)</option>
+                <option value="modern">2. Modern Tech (Clean)</option>
+                <option value="executive">3. Executive Corporate</option>
+              </select>
+            </div>
+
+            <button type="button" onclick="downloadAsDoc()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-xs transition flex items-center gap-1">
+              💾 Word (.doc)
+            </button>
+            <button type="button" id="btnDownloadPdf" onclick="downloadAsPdf()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center gap-1">
+              📄 Download PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Rendered Resume Preview Paper -->
+        <div class="bg-white p-8 sm:p-10 rounded-2xl border border-slate-300 shadow-lg min-h-[750px] resume-sheet text-[13px] pattern-classic" id="resumePaper">
+          <div class="sec-header" id="pvHeaderBlock">
+            <h1 class="text-2xl font-bold uppercase tracking-wider" id="pvName">JOHN DOE</h1>
+            <p class="text-xs mt-1" id="pvContact">New York, NY • johndoe@email.com • +1 (555) 019-2834 • linkedin.com/in/johndoe • github.com/johndoe</p>
+          </div>
+
+          <!-- Professional Summary -->
+          <div class="mt-4">
+            <h2 class="sec-title">Professional Summary</h2>
+            <p class="mt-1.5 text-justify" id="pvSummary">
+              Results-driven Computer Science graduate specializing in scalable backend architectures, REST API engineering, and machine learning pipelines. Demonstrated expertise in building automated NLP text evaluators and deploying containerized workflows using Docker to eliminate production parity issues and achieve full ATS compliance.
+            </p>
+          </div>
+
+          <!-- Technical Skills -->
+          <div class="mt-4">
+            <h2 class="sec-title">Technical Skills</h2>
+            <div class="mt-1.5" id="pvSkills">
+              <p>Python, SQL, Flask, REST APIs, Git, Docker, Data Structures, scikit-learn, HTML, CSS, JavaScript, PostgreSQL</p>
+            </div>
+          </div>
+
+          <!-- Experience -->
+          <div class="mt-4">
+            <h2 class="sec-title">Professional Experience</h2>
+            <div class="mt-1.5" id="pvExperience">
+              <div class="flex justify-between font-bold">
+                <span id="pvExpRole">Software Engineering Intern</span>
+                <span id="pvExpDates">June 2025 – Present</span>
+              </div>
+              <p class="italic text-xs text-slate-600" id="pvExpComp">Apex Global Tech Solutions • New York, NY</p>
+              <ul class="list-disc ml-5 mt-1 space-y-1" id="pvExpList">
+                <li>Engineered and containerized microservice modules using Docker, standardizing local and production execution environments.</li>
+                <li>Designed secure RESTful API endpoints in Flask, cutting query data retrieval overhead by 22%.</li>
+                <li>Collaborated in agile sprint cycles utilizing Git branching workflows, code reviews, and automated sanity testing.</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Projects -->
+          <div class="mt-4">
+            <h2 class="sec-title">Technical & Academic Projects</h2>
+            <div class="mt-1.5 space-y-2" id="pvProjects">
+              <div>
+                <div class="flex justify-between font-bold">
+                  <span id="pvProjTitle">SkillSync AI — ATS Resume Screening & Evaluation Platform</span>
+                  <span class="text-xs font-medium text-slate-600">Python, Flask, NLP</span>
+                </div>
+                <ul class="list-disc ml-5 mt-0.5 space-y-0.5" id="pvProjList">
+                  <li>Built multi-format document parser (.pdf, .docx, .txt) processing candidate tokens into unified corpus streams.</li>
+                  <li>Applied Bi-gram TF-IDF vectorization and Cosine Similarity to compute mathematical alignment against target Job Descriptions.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Education -->
+          <div class="mt-4">
+            <h2 class="sec-title">Education</h2>
+            <div class="mt-1.5 flex justify-between">
+              <div>
+                <p class="font-bold" id="pvDegree">Bachelor of Science in Computer Science</p>
+                <p class="text-xs text-slate-600" id="pvCollege">State University of Technology • New York, NY</p>
+              </div>
+              <div class="text-right font-medium">
+                <p id="pvGradYear">Expected Graduation: May 2026</p>
+                <p class="text-xs" id="pvCgpa">CGPA: 3.8 / 4.0</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Certifications -->
+          <div class="mt-4">
+            <h2 class="sec-title">Certifications & Competencies</h2>
+            <p class="mt-1">Python for Data Science • RESTful API Design & Best Practices • Enterprise Container Fundamentals</p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    let activePattern = 'classic';
+
+    function changeTemplate(patternName) {
+      activePattern = patternName;
+      const paper = document.getElementById('resumePaper');
+      if (!paper) return;
+
+      paper.classList.remove('pattern-classic', 'pattern-modern', 'pattern-executive');
+      paper.classList.add('pattern-' + patternName);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      if (!document.getElementById('fSkills').value) {
+        document.getElementById('fSkills').value = "Python, SQL, Flask, REST APIs, Git, Docker, Data Structures, scikit-learn, HTML, CSS, JavaScript, PostgreSQL";
+      }
+      if (!document.getElementById('fExpBullets').value) {
+        document.getElementById('fExpBullets').value = "Engineered and containerized microservice modules using Docker, standardizing local and production execution environments.\nDesigned secure RESTful API endpoints in Flask, cutting query data retrieval overhead by 22%.\nCollaborated in agile sprint cycles utilizing Git branching workflows, code reviews, and automated sanity testing.";
+      }
+      if (!document.getElementById('fProjBullets').value) {
+        document.getElementById('fProjBullets').value = "Built multi-format document parser (.pdf, .docx, .txt) processing candidate tokens into unified corpus streams.\nApplied Bi-gram TF-IDF vectorization and Cosine Similarity to compute mathematical alignment against target Job Descriptions.";
+      }
+
+      const storedData = sessionStorage.getItem('skillsync_gap_data');
+      if (storedData) {
+        try {
+          const parsed = JSON.parse(storedData);
+          if (parsed.candidate_name && parsed.candidate_name !== 'Candidate') {
+            document.getElementById('fName').value = parsed.candidate_name;
+          }
+          if (parsed.missing_skills && parsed.missing_skills.length) {
+            let cur = document.getElementById('fSkills').value;
+            parsed.missing_skills.forEach(s => {
+              if (!cur.toLowerCase().includes(s.toLowerCase())) cur += ", " + s;
+            });
+            document.getElementById('fSkills').value = cur;
+          }
+        } catch(e) {}
+      }
+      updateLiveResume();
+    });
+
+    // ================= AI GENERATE RESUME FUNCTION =================
+    async function generateWithAI() {
+      const promptText = document.getElementById('aiPromptInput').value.trim();
+      const btn = document.getElementById('btnRunAi');
+
+      if (!promptText) {
+        alert("Please write your details or instructions in the prompt box.");
+        return;
+      }
+
+      const originalContent = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="animate-spin">⚙️</span> Synthesizing Full Resume...`;
+
+      try {
+        const res = await fetch('/api/ai-generate-resume', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: promptText })
+        });
+
+        const result = await res.json();
+
+        if (res.ok && result.success) {
+          const d = result.data;
+
+          const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el && val !== undefined && val !== null) {
+              el.value = val;
+            }
+          };
+
+          setVal('fName', d.name);
+          setVal('fEmail', d.email);
+          setVal('fPhone', d.phone);
+          setVal('fLocation', d.location);
+          setVal('fLinks', d.links);
+          setVal('fRole', d.role);
+          setVal('fSkills', d.skills);
+          setVal('fDegree', d.degree);
+          setVal('fCollege', d.college);
+          setVal('fGradYear', d.grad_year);
+          setVal('fCgpa', d.cgpa);
+
+          setVal('fExpTitle', d.exp_title);
+          setVal('fExpCompany', d.exp_company);
+          setVal('fExpDuration', d.exp_duration);
+          if (d.exp_bullets && Array.isArray(d.exp_bullets)) {
+            setVal('fExpBullets', d.exp_bullets.join('\n'));
+          }
+
+          setVal('fProjTitle', d.proj_title);
+          if (d.proj_bullets && Array.isArray(d.proj_bullets)) {
+            setVal('fProjBullets', d.proj_bullets.join('\n'));
+          }
+
+          updateLiveResume();
+
+          const sumEl = document.getElementById('pvSummary');
+          if (sumEl && d.summary) {
+            sumEl.textContent = d.summary;
+          }
+        } else {
+          alert(result.error || "AI generation failed.");
+        }
+      } catch (err) {
+        alert("Network communication error with AI engine: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+      }
+    }
+
+    function updateLiveResume() {
+      const getVal = (id, fallback = "") => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : fallback;
+      };
+
+      const setTxt = (id, txt) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = txt;
+      };
+
+      const name = getVal('fName', "JOHN DOE") || "JOHN DOE";
+      const email = getVal('fEmail', "johndoe@email.com");
+      const phone = getVal('fPhone', "+1 (555) 019-2834");
+      const location = getVal('fLocation', "New York, NY");
+      const links = getVal('fLinks', "linkedin.com/in/johndoe • github.com/johndoe");
+      const role = getVal('fRole', "Software Engineer") || "Software Engineer";
+
+      setTxt('pvName', name.toUpperCase());
+      setTxt('pvContact', `${location} • ${email} • ${phone} • ${links}`);
+      setTxt('pvSummary', `Results-driven ${role} graduate specializing in scalable backend architectures, clean code implementation, and production pipelines. Proficient in delivering verified ATS-compliant deliverables and collaborative systems development.`);
+
+      const skills = getVal('fSkills');
+      const pvSkills = document.getElementById('pvSkills');
+      if (pvSkills) pvSkills.innerHTML = `<p>${skills}</p>`;
+
+      setTxt('pvDegree', getVal('fDegree'));
+      setTxt('pvCollege', getVal('fCollege'));
+      setTxt('pvGradYear', getVal('fGradYear'));
+      setTxt('pvCgpa', getVal('fCgpa'));
+
+      setTxt('pvExpRole', getVal('fExpTitle'));
+      setTxt('pvExpDates', getVal('fExpDuration'));
+      setTxt('pvExpComp', getVal('fExpCompany'));
+      
+      const expBullets = getVal('fExpBullets').split('\n').filter(b => b.trim());
+      const pvExpList = document.getElementById('pvExpList');
+      if (pvExpList) {
+        pvExpList.innerHTML = expBullets.map(b => `<li>${b.trim()}</li>`).join('');
+      }
+
+      setTxt('pvProjTitle', getVal('fProjTitle'));
+      const projBullets = getVal('fProjBullets').split('\n').filter(b => b.trim());
+      const pvProjList = document.getElementById('pvProjList');
+      if (pvProjList) {
+        pvProjList.innerHTML = projBullets.map(b => `<li>${b.trim()}</li>`).join('');
+      }
+    }
+
+    async function downloadAsPdf() {
+      updateLiveResume();
+      const btn = document.getElementById('btnDownloadPdf');
+      const originalText = btn ? btn.innerHTML : "Download PDF";
+      if (btn) {
+        btn.innerHTML = "⏳ Generating...";
+        btn.disabled = true;
+      }
+
+      const getVal = (id, fallback = "") => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : fallback;
+      };
+
+      const payload = {
+        template: activePattern,
+        candidate_name: getVal('fName', "Candidate") || "Candidate",
+        email: getVal('fEmail'),
+        phone: getVal('fPhone'),
+        location: getVal('fLocation'),
+        links: getVal('fLinks'),
+        role: getVal('fRole'),
+        degree: getVal('fDegree'),
+        college: getVal('fCollege'),
+        grad_year: getVal('fGradYear'),
+        cgpa: getVal('fCgpa'),
+        skills: getVal('fSkills'),
+        exp_title: getVal('fExpTitle'),
+        exp_duration: getVal('fExpDuration'),
+        exp_company: getVal('fExpCompany'),
+        exp_bullets: getVal('fExpBullets').split('\n').filter(b => b.trim()),
+        proj_title: getVal('fProjTitle'),
+        proj_bullets: getVal('fProjBullets').split('\n').filter(b => b.trim())
+      };
+
+      try {
+        const res = await fetch('/api/download-resume-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${payload.candidate_name.replace(/\s+/g, '_')}_Actual_ATS_Resume.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          a.remove();
+        } else {
+          alert("Server error generating PDF. Please ensure server is running.");
+        }
+      } catch (err) {
+        alert("Network error: " + err.message);
+      } finally {
+        if (btn) {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      }
+    }
+
+    function downloadAsDoc() {
+      updateLiveResume();
+      const element = document.getElementById('resumePaper');
+      const fNameEl = document.getElementById('fName');
+      const candName = ((fNameEl ? fNameEl.value : null) || 'Candidate').replace(/\s+/g, '_');
+      const content = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><title>Resume</title><style>body{font-family:'Times New Roman',serif; font-size:11pt; line-height:1.35;}</style></head>
+        <body>${element ? element.innerHTML : ""}</body>
+        </html>
+      `;
+      const blob = new Blob([content], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${candName}_Actual_ATS_Resume.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
