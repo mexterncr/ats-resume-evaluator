@@ -761,7 +761,7 @@ def ai_generate_resume():
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": user_instruction}
             ],
-            model="llama3-8b-8192",
+            model="llama-3.1-8b-instant",
             temperature=0.2,
             response_format={"type": "json_object"}
         )
