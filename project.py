@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 import os
 import io
+import json
 import time
 import random
 import requests
@@ -22,11 +23,10 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
-# Google GenAI Imports
-import os
+# Groq Cloud Client Integration
 from groq import Groq
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "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")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 app = Flask(__name__)
@@ -44,7 +44,7 @@ SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "huzaifayhchannel@gmail.com")
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "1063711450384-jqhqdt2igs7eldt2ldsms9ug55skrj4g.apps.googleusercontent.com")
 
-EMAIL_REGEX = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}\$'
+EMAIL_REGEX = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$'
 
 db = SQLAlchemy(app)
 
@@ -126,7 +126,7 @@ def extract_candidate_name(raw_text, filename):
                 continue
             return " ".join(clean_tokens).title()
 
-    clean_fn = re.sub(r'\.[^/.]+\$', '', filename)
+    clean_fn = re.sub(r'\.[^/.]+$', '', filename)
     clean_fn = re.sub(r'\(\d+\)', '', clean_fn)
     fn_first_part = re.split(r'[-_]', clean_fn)[0].strip()
     fn_tokens = [w for w in fn_first_part.split() if w.lower() not in DISQUALIFIERS and not re.search(r'\d', w)]
@@ -287,29 +287,27 @@ def download_resume_pdf():
         bottomMargin=36
     )
 
-    # Dynamic Typography Selection by Pattern
     if template == 'modern':
         font_main = 'Helvetica'
         font_bold = 'Helvetica-Bold'
-        header_align = 0  # Left-aligned
+        header_align = 0
         accent_color = colors.HexColor('#1E3A8A')
         line_color = colors.HexColor('#2563EB')
     elif template == 'executive':
         font_main = 'Times-Roman'
         font_bold = 'Times-Bold'
-        header_align = 1  # Centered
+        header_align = 1
         accent_color = colors.HexColor('#0F172A')
         line_color = colors.HexColor('#334155')
-    else:  # classic Harvard / Ivy standard
+    else:
         font_main = 'Times-Roman'
         font_bold = 'Times-Bold'
-        header_align = 1  # Centered
+        header_align = 1
         accent_color = colors.black
         line_color = colors.black
 
     styles = getSampleStyleSheet()
     
-    # Sabse upar Name (22pt Bold)
     title_style = ParagraphStyle(
         'Title',
         parent=styles['Normal'],
@@ -320,7 +318,6 @@ def download_resume_pdf():
         textColor=accent_color
     )
     
-    # Sub-header contact info
     contact_style = ParagraphStyle(
         'Contact',
         parent=styles['Normal'],
@@ -331,7 +328,6 @@ def download_resume_pdf():
         textColor=colors.HexColor('#222222')
     )
     
-    # Headlines (Technical Skills, Projects, etc. - Bold 14pt)
     heading_style = ParagraphStyle(
         'Heading',
         parent=styles['Normal'],
@@ -343,7 +339,6 @@ def download_resume_pdf():
         spaceAfter=3
     )
     
-    # Normal Info / Body text (12pt)
     body_style = ParagraphStyle(
         'Body',
         parent=styles['Normal'],
@@ -353,7 +348,6 @@ def download_resume_pdf():
         textColor=colors.black
     )
     
-    # Bullet points (12pt)
     bullet_style = ParagraphStyle(
         'Bullet',
         parent=body_style,
@@ -711,7 +705,7 @@ def analyze():
         return jsonify(results[0])
     return jsonify({'multiple': True, 'results': results})
 
-# ----------------- AI PROMPT GENERATOR ROUTE WITH AUTO-RETRY -----------------
+# ----------------- AI PROMPT GENERATOR ROUTE -----------------
 @app.route('/api/ai-generate-resume', methods=['POST'])
 def ai_generate_resume():
     data = request.get_json() or {}
@@ -755,22 +749,28 @@ def ai_generate_resume():
     }
     """
 
-    try:
-        chat_completion = groq_client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": user_instruction}
-            ],
-            model="llama-3.1-8b-instant",
-            temperature=0.2,
-            response_format={"type": "json_object"}
-        )
-        raw_text = chat_completion.choices[0].message.content.strip()
-        parsed_json = json.loads(raw_text)
-        return jsonify({'success': True, 'data': parsed_json})
-    except Exception as e:
-        return jsonify({'error': f'AI Generation Failed: {str(e)}'}), 500
+    target_models = ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
+    last_error = None
 
-    
+    for m in target_models:
+        try:
+            chat_completion = groq_client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": user_instruction}
+                ],
+                model=m,
+                temperature=0.2,
+                response_format={"type": "json_object"}
+            )
+            raw_text = chat_completion.choices[0].message.content.strip()
+            parsed_json = json.loads(raw_text)
+            return jsonify({'success': True, 'data': parsed_json})
+        except Exception as e:
+            last_error = e
+            continue
+
+    return jsonify({'error': f'AI Generation Failed: {str(last_error)}'}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
