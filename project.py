@@ -23,11 +23,11 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
 # Google GenAI Imports
-from google import genai
-import json
+import os
+from groq import Groq
 
-GEMINI_API_KEY = "AIzaSyB3Mkop7thfKJbIqCJq8kt22YlGg2WV5Os"
-gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE" else None
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "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")
+groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'skillsync-secret-key-prod-2026')
@@ -720,8 +720,8 @@ def ai_generate_resume():
     if not user_instruction:
         return jsonify({'error': 'Please provide instructions for the AI.'}), 400
 
-    if not gemini_client:
-        return jsonify({'error': 'GEMINI_API_KEY is not configured on the server.'}), 500
+    if not groq_client:
+        return jsonify({'error': 'GROQ_API_KEY is not configured on the server.'}), 500
 
     system_instruction = """
     You are an expert ATS Resume Architect. Based on the user's instructions and background details, construct an ATS-compliant professional resume.
@@ -755,42 +755,22 @@ def ai_generate_resume():
     }
     """
 
-    models_to_try = ['gemini-3.8-flash', 'gemini-2.5-flash']
-    response = None
-    last_err = None
-
-    # Automatic Retry mechanism to eliminate 503 errors
-    for m in models_to_try:
-        for attempt in range(2):
-            try:
-                response = gemini_client.models.generate_content(
-                    model=m,
-                    contents=f"{system_instruction}\n\nUser Instruction:\n{user_instruction}"
-                )
-                if response and response.text:
-                    break
-            except Exception as e:
-                last_err = e
-                time.sleep(1)
-        if response and response.text:
-            break
-
-    if not response or not response.text:
-        return jsonify({'error': f'AI Service is currently busy. Please retry: {str(last_err)}'}), 503
-
     try:
-        raw_text = response.text.strip()
-        if raw_text.startswith("```json"):
-            raw_text = raw_text[7:]
-        if raw_text.startswith("```"):
-            raw_text = raw_text[3:]
-        if raw_text.endswith("```"):
-            raw_text = raw_text[:-3]
-
-        parsed_json = json.loads(raw_text.strip())
+        chat_completion = groq_client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": user_instruction}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.2,
+            response_format={"type": "json_object"}
+        )
+        raw_text = chat_completion.choices[0].message.content.strip()
+        parsed_json = json.loads(raw_text)
         return jsonify({'success': True, 'data': parsed_json})
     except Exception as e:
-        return jsonify({'error': f'Failed to parse generated resume: {str(e)}'}), 500
+        return jsonify({'error': f'AI Generation Failed: {str(e)}'}), 500
 
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
