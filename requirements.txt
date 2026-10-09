@@ -8,4 +8,4 @@ flask-sqlalchemy
 google-auth
 requests
 reportlab
-google-genai
+groq
