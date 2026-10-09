@@ -1,8 +1,11 @@
 flask
 gunicorn
 pypdf
+pdfplumber
 scikit-learn
 python-docx
 flask-sqlalchemy
 google-auth
 requests
+reportlab
+google-genai
