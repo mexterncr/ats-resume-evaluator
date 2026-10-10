@@ -125,7 +125,7 @@
               </label>
               <span class="text-[10px] bg-purple-200/60 text-purple-800 font-bold px-2 py-0.5 rounded-full">Automated Synthesis</span>
             </div>
-            <textarea id="aiPromptInput" rows="3" class="w-full text-xs p-2.5 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 bg-white placeholder:text-slate-400" placeholder="e.g., Computer Science graduate targeting a Junior Full-Stack Developer role. Proficient in Python, Flask, SQL, and Docker, with a completed backend engineering internship and key academic projects."></textarea>
+            <textarea id="aiPromptInput" rows="3" class="w-full text-xs p-2.5 border border-purple-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-400 bg-white placeholder:text-slate-400" placeholder="e.g., Civil Engineering graduate proficient in AutoCAD, Revit, SAP2000, MS Project, and Primavera. Experience in residential planning and site execution."></textarea>
             <button type="button" id="btnRunAi" onclick="generateWithAI()" style="background: linear-gradient(to right, #9333ea, #4f46e5); color: #ffffff;" class="w-full py-2.5 text-white rounded-lg text-xs font-bold shadow-md transition flex items-center justify-center gap-2">
               <span>⚡</span> Generate Resume via AI Instruction
             </button>
@@ -156,51 +156,63 @@
                 </div>
                 <div>
                   <label class="block text-slate-600 font-medium mb-1">Target Job Role</label>
-                  <input type="text" id="fRole" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500 font-semibold" value="Software Engineer">
+                  <input type="text" id="fRole" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500 font-semibold" value="Project Engineer">
                 </div>
               </div>
               <div>
-                <label class="block text-slate-600 font-medium mb-1">Profiles (LinkedIn / GitHub)</label>
-                <input type="text" id="fLinks" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="linkedin.com/in/johndoe • github.com/johndoe">
+                <label class="block text-slate-600 font-medium mb-1">Profiles (LinkedIn / Portfolio)</label>
+                <input type="text" id="fLinks" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="linkedin.com/in/johndoe">
               </div>
             </div>
 
-            <!-- 2. Education -->
+            <!-- Professional Summary -->
             <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">2. Education & Qualification</span>
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">2. Professional Summary</span>
+              <textarea id="fSummary" rows="3" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500">Results-driven engineering professional specializing in structural analysis, site supervision, and technical drafting. Proven track record in project scheduling, regulatory compliance, and cost estimation.</textarea>
+            </div>
+
+            <!-- Education -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">3. Education & Qualification</span>
               <div>
                 <label class="block text-slate-600 font-medium mb-1">Degree Title</label>
-                <input type="text" id="fDegree" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500 font-medium" value="Bachelor of Science in Computer Science">
+                <input type="text" id="fDegree" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500 font-medium" value="Bachelor of Engineering">
               </div>
               <div>
                 <label class="block text-slate-600 font-medium mb-1">College / University Name</label>
-                <input type="text" id="fCollege" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="State University of Technology • New York, NY">
+                <input type="text" id="fCollege" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="State Technical University">
               </div>
               <div class="grid grid-cols-2 gap-2">
                 <div>
                   <label class="block text-slate-600 font-medium mb-1">Passing Year</label>
-                  <input type="text" id="fGradYear" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="Expected May 2026">
+                  <input type="text" id="fGradYear" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="2026">
                 </div>
                 <div>
                   <label class="block text-slate-600 font-medium mb-1">CGPA / Percentage</label>
-                  <input type="text" id="fCgpa" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="CGPA: 3.8 / 4.0">
+                  <input type="text" id="fCgpa" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="8.5 / 10">
                 </div>
               </div>
             </div>
 
-            <!-- 3. Technical Skills -->
+            <!-- Technical Skills -->
             <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">3. Technical Skills</span>
-              <textarea id="fSkills" rows="2" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" placeholder="Python, SQL, Flask, Git, Docker, REST APIs, Data Structures, HTML, CSS, JavaScript"></textarea>
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">4. Technical Skills</span>
+              <textarea id="fSkills" rows="2" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" placeholder="AutoCAD, Revit, SAP2000, MS Project, Primavera, BIM, Cost Estimation"></textarea>
             </div>
 
-            <!-- 4. Work / Internship Experience -->
+            <!-- Certifications -->
             <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">4. Work / Internship Experience</span>
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">5. Certifications & Competencies</span>
+              <textarea id="fCerts" rows="2" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" placeholder="AutoCAD Certified User • PMP Fundamentals • Site Safety Management (OSHA)"></textarea>
+            </div>
+
+            <!-- Work / Internship Experience -->
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">6. Work / Internship Experience</span>
               <div class="grid grid-cols-2 gap-2">
                 <div>
                   <label class="block text-slate-600 font-medium mb-1">Job Title</label>
-                  <input type="text" id="fExpTitle" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="Software Engineering Intern">
+                  <input type="text" id="fExpTitle" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="Engineering Trainee">
                 </div>
                 <div>
                   <label class="block text-slate-600 font-medium mb-1">Duration</label>
@@ -209,24 +221,26 @@
               </div>
               <div>
                 <label class="block text-slate-600 font-medium mb-1">Company & City</label>
-                <input type="text" id="fExpCompany" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="Apex Global Tech Solutions • New York, NY">
+                <input type="text" id="fExpCompany" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="Apex Infrastructure Solutions">
               </div>
               <div>
                 <label class="block text-slate-600 font-medium mb-1">Work Done / Achievements (Separate lines with newlines)</label>
-                <textarea id="fExpBullets" rows="3" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500"></textarea>
+                <textarea id="fExpBullets" rows="3" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500">Supervised daily on-site project activities ensuring full regulatory standards compliance.
+Prepared structural shop drawings and BIM model coordination saving delivery turnaround.</textarea>
               </div>
             </div>
 
-            <!-- 5. Projects -->
+            <!-- Projects -->
             <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">5. Projects</span>
+              <span class="font-bold text-slate-700 block uppercase tracking-wider text-[11px]">7. Projects</span>
               <div>
-                <label class="block text-slate-600 font-medium mb-1">Project Name & Technologies</label>
-                <input type="text" id="fProjTitle" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="SkillSync AI — ATS Resume Screening & Evaluation Platform (Python, Flask, NLP)">
+                <label class="block text-slate-600 font-medium mb-1">Project Name & Tools</label>
+                <input type="text" id="fProjTitle" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500" value="Structural Design & Seismic Assessment (AutoCAD, SAP2000)">
               </div>
               <div>
-                <label class="block text-slate-600 font-medium mb-1">Project Work / Highlights</label>
-                <textarea id="fProjBullets" rows="2" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500"></textarea>
+                <label class="block text-slate-600 font-medium mb-1">Project Highlights (Separate lines with newlines)</label>
+                <textarea id="fProjBullets" rows="2" oninput="updateLiveResume()" class="w-full p-2 border border-slate-300 rounded-lg outline-none focus:border-blue-500">Conducted load distribution calculations and 3D modeling for multi-story residential layout.
+Ensured standard compliance with structural design codes and optimized material costs.</textarea>
               </div>
             </div>
 
@@ -269,78 +283,77 @@
         <div class="bg-white p-8 sm:p-10 rounded-2xl border border-slate-300 shadow-lg min-h-[750px] resume-sheet text-[13px] pattern-classic" id="resumePaper">
           <div class="sec-header" id="pvHeaderBlock">
             <h1 class="text-2xl font-bold uppercase tracking-wider" id="pvName">JOHN DOE</h1>
-            <p class="text-xs mt-1" id="pvContact">New York, NY • johndoe@email.com • +1 (555) 019-2834 • linkedin.com/in/johndoe • github.com/johndoe</p>
+            <p class="text-xs mt-1" id="pvContact">New York, NY • johndoe@email.com • +1 (555) 019-2834 • linkedin.com/in/johndoe</p>
           </div>
 
           <!-- Professional Summary -->
-          <div class="mt-4">
+          <div class="mt-4" id="secPvSummary">
             <h2 class="sec-title">Professional Summary</h2>
             <p class="mt-1.5 text-justify" id="pvSummary">
-              Results-driven Computer Science graduate specializing in scalable backend architectures, REST API engineering, and machine learning pipelines. Demonstrated expertise in building automated NLP text evaluators and deploying containerized workflows using Docker to eliminate production parity issues and achieve full ATS compliance.
+              Results-driven engineering professional specializing in structural analysis, site supervision, and technical drafting. Proven track record in project scheduling, regulatory compliance, and cost estimation.
             </p>
           </div>
 
           <!-- Technical Skills -->
-          <div class="mt-4">
+          <div class="mt-4" id="secPvSkills">
             <h2 class="sec-title">Technical Skills</h2>
             <div class="mt-1.5" id="pvSkills">
-              <p>Python, SQL, Flask, REST APIs, Git, Docker, Data Structures, scikit-learn, HTML, CSS, JavaScript, PostgreSQL</p>
+              <p>AutoCAD, Revit, SAP2000, MS Project, Primavera, BIM, Cost Estimation</p>
             </div>
           </div>
 
           <!-- Experience -->
-          <div class="mt-4">
+          <div class="mt-4" id="secPvExperience">
             <h2 class="sec-title">Professional Experience</h2>
             <div class="mt-1.5" id="pvExperience">
               <div class="flex justify-between font-bold">
-                <span id="pvExpRole">Software Engineering Intern</span>
+                <span id="pvExpRole">Engineering Trainee</span>
                 <span id="pvExpDates">June 2025 – Present</span>
               </div>
-              <p class="italic text-xs text-slate-600" id="pvExpComp">Apex Global Tech Solutions • New York, NY</p>
+              <p class="italic text-xs text-slate-600" id="pvExpComp">Apex Infrastructure Solutions</p>
               <ul class="list-disc ml-5 mt-1 space-y-1" id="pvExpList">
-                <li>Engineered and containerized microservice modules using Docker, standardizing local and production execution environments.</li>
-                <li>Designed secure RESTful API endpoints in Flask, cutting query data retrieval overhead by 22%.</li>
-                <li>Collaborated in agile sprint cycles utilizing Git branching workflows, code reviews, and automated sanity testing.</li>
+                <li>Supervised daily on-site project activities ensuring full regulatory standards compliance.</li>
+                <li>Prepared structural shop drawings and BIM model coordination saving delivery turnaround.</li>
               </ul>
             </div>
           </div>
 
           <!-- Projects -->
-          <div class="mt-4">
+          <div class="mt-4" id="secPvProjects">
             <h2 class="sec-title">Technical & Academic Projects</h2>
             <div class="mt-1.5 space-y-2" id="pvProjects">
               <div>
                 <div class="flex justify-between font-bold">
-                  <span id="pvProjTitle">SkillSync AI — ATS Resume Screening & Evaluation Platform</span>
-                  <span class="text-xs font-medium text-slate-600">Python, Flask, NLP</span>
+                  <span id="pvProjTitle">Structural Design & Seismic Assessment</span>
+                  <span class="text-xs font-medium text-slate-600" id="pvProjTech">AutoCAD, SAP2000</span>
                 </div>
                 <ul class="list-disc ml-5 mt-0.5 space-y-0.5" id="pvProjList">
-                  <li>Built multi-format document parser (.pdf, .docx, .txt) processing candidate tokens into unified corpus streams.</li>
-                  <li>Applied Bi-gram TF-IDF vectorization and Cosine Similarity to compute mathematical alignment against target Job Descriptions.</li>
+                  <li>Conducted load distribution calculations and 3D modeling for multi-story residential layout.</li>
+                  <li>Ensured standard compliance with structural design codes and optimized material costs.</li>
                 </ul>
               </div>
             </div>
           </div>
 
           <!-- Education -->
-          <div class="mt-4">
+          <div class="mt-4" id="secPvEducation">
             <h2 class="sec-title">Education</h2>
             <div class="mt-1.5 flex justify-between">
               <div>
-                <p class="font-bold" id="pvDegree">Bachelor of Science in Computer Science</p>
-                <p class="text-xs text-slate-600" id="pvCollege">State University of Technology • New York, NY</p>
+                <p class="font-bold" id="pvDegree">Bachelor of Engineering</p>
+                <p class="text-xs text-slate-600" id="pvCollege">State Technical University</p>
               </div>
               <div class="text-right font-medium">
-                <p id="pvGradYear">Expected Graduation: May 2026</p>
-                <p class="text-xs" id="pvCgpa">CGPA: 3.8 / 4.0</p>
+                <p id="pvGradYear">2026</p>
+                <p class="text-xs" id="pvCgpa">8.5 / 10</p>
               </div>
             </div>
           </div>
 
           <!-- Certifications -->
-          <div class="mt-4">
+          <div class="mt-4" id="secPvCertifications">
             <h2 class="sec-title">Certifications & Competencies</h2>
-            <p class="mt-1">Python for Data Science • RESTful API Design & Best Practices • Enterprise Container Fundamentals</p>
+            <p class="mt-1" id="pvCertifications">AutoCAD Certified User • PMP Fundamentals • Site Safety Management (OSHA)</p>
           </div>
 
         </div>
@@ -361,49 +374,67 @@
       paper.classList.add('pattern-' + patternName);
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      if (!document.getElementById('fSkills').value) {
-        document.getElementById('fSkills').value = "Python, SQL, Flask, REST APIs, Git, Docker, Data Structures, scikit-learn, HTML, CSS, JavaScript, PostgreSQL";
-      }
-      if (!document.getElementById('fExpBullets').value) {
-        document.getElementById('fExpBullets').value = "Engineered and containerized microservice modules using Docker, standardizing local and production execution environments.\nDesigned secure RESTful API endpoints in Flask, cutting query data retrieval overhead by 22%.\nCollaborated in agile sprint cycles utilizing Git branching workflows, code reviews, and automated sanity testing.";
-      }
-      if (!document.getElementById('fProjBullets').value) {
-        document.getElementById('fProjBullets').value = "Built multi-format document parser (.pdf, .docx, .txt) processing candidate tokens into unified corpus streams.\nApplied Bi-gram TF-IDF vectorization and Cosine Similarity to compute mathematical alignment against target Job Descriptions.";
+    function updateLiveResume() {
+      // 1. Personal & Contact
+      const name = document.getElementById('fName').value.trim() || 'CANDIDATE NAME';
+      const email = document.getElementById('fEmail').value.trim();
+      const phone = document.getElementById('fPhone').value.trim();
+      const loc = document.getElementById('fLocation').value.trim();
+      const links = document.getElementById('fLinks').value.trim();
+
+      document.getElementById('pvName').innerText = name.toUpperCase();
+      const contactArr = [loc, email, phone, links].filter(Boolean);
+      document.getElementById('pvContact').innerText = contactArr.join(' • ');
+
+      // 2. Summary
+      document.getElementById('pvSummary').innerText = document.getElementById('fSummary').value.trim();
+
+      // 3. Skills
+      document.getElementById('pvSkills').innerHTML = `<p>${document.getElementById('fSkills').value.trim()}</p>`;
+
+      // 4. Certifications
+      document.getElementById('pvCertifications').innerText = document.getElementById('fCerts').value.trim() || 'Professional Project Management • Quality & Safety Compliance';
+
+      // 5. Experience
+      document.getElementById('pvExpRole').innerText = document.getElementById('fExpTitle').value.trim();
+      document.getElementById('pvExpDates').innerText = document.getElementById('fExpDuration').value.trim();
+      document.getElementById('pvExpComp').innerText = document.getElementById('fExpCompany').value.trim();
+
+      const expLines = document.getElementById('fExpBullets').value.split('\n').filter(l => l.trim().length > 0);
+      document.getElementById('pvExpList').innerHTML = expLines.map(l => `<li>${l.trim()}</li>`).join('');
+
+      // 6. Projects
+      const projFull = document.getElementById('fProjTitle').value.trim();
+      const parenMatch = projFull.match(/\((.*?)\)/);
+      if (parenMatch) {
+        document.getElementById('pvProjTitle').innerText = projFull.replace(/\((.*?)\)/, '').trim();
+        document.getElementById('pvProjTech').innerText = parenMatch[1].trim();
+      } else {
+        document.getElementById('pvProjTitle').innerText = projFull;
+        document.getElementById('pvProjTech').innerText = '';
       }
 
-      const storedData = sessionStorage.getItem('skillsync_gap_data');
-      if (storedData) {
-        try {
-          const parsed = JSON.parse(storedData);
-          if (parsed.candidate_name && parsed.candidate_name !== 'Candidate') {
-            document.getElementById('fName').value = parsed.candidate_name;
-          }
-          if (parsed.missing_skills && parsed.missing_skills.length) {
-            let cur = document.getElementById('fSkills').value;
-            parsed.missing_skills.forEach(s => {
-              if (!cur.toLowerCase().includes(s.toLowerCase())) cur += ", " + s;
-            });
-            document.getElementById('fSkills').value = cur;
-          }
-        } catch(e) {}
-      }
-      updateLiveResume();
-    });
+      const projLines = document.getElementById('fProjBullets').value.split('\n').filter(l => l.trim().length > 0);
+      document.getElementById('pvProjList').innerHTML = projLines.map(l => `<li>${l.trim()}</li>`).join('');
 
-    // ================= AI GENERATE RESUME FUNCTION =================
+      // 7. Education
+      document.getElementById('pvDegree').innerText = document.getElementById('fDegree').value.trim();
+      document.getElementById('pvCollege').innerText = document.getElementById('fCollege').value.trim();
+      document.getElementById('pvGradYear').innerText = document.getElementById('fGradYear').value.trim();
+      document.getElementById('pvCgpa').innerText = document.getElementById('fCgpa').value.trim();
+    }
+
     async function generateWithAI() {
       const promptText = document.getElementById('aiPromptInput').value.trim();
-      const btn = document.getElementById('btnRunAi');
-
       if (!promptText) {
-        alert("Please write your details or instructions in the prompt box.");
+        alert('Please enter prompt instructions for the AI.');
         return;
       }
 
-      const originalContent = btn.innerHTML;
+      const btn = document.getElementById('btnRunAi');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span>⏳</span> Synthesizing Full Resume...';
       btn.disabled = true;
-      btn.innerHTML = `<span class="animate-spin">⚙️</span> Synthesizing Full Resume...`;
 
       try {
         const res = await fetch('/api/ai-generate-resume', {
@@ -411,195 +442,115 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt: promptText })
         });
-
         const result = await res.json();
 
-        if (res.ok && result.success) {
+        if (result.success && result.data) {
           const d = result.data;
+          if (d.name) document.getElementById('fName').value = d.name;
+          if (d.email) document.getElementById('fEmail').value = d.email;
+          if (d.phone) document.getElementById('fPhone').value = d.phone;
+          if (d.location) document.getElementById('fLocation').value = d.location;
+          if (d.role) document.getElementById('fRole').value = d.role;
+          if (d.links) document.getElementById('fLinks').value = d.links;
+          if (d.summary) document.getElementById('fSummary').value = d.summary;
+          if (d.skills) document.getElementById('fSkills').value = d.skills;
+          if (d.certifications) document.getElementById('fCerts').value = d.certifications;
+          if (d.degree) document.getElementById('fDegree').value = d.degree;
+          if (d.college) document.getElementById('fCollege').value = d.college;
+          if (d.grad_year) document.getElementById('fGradYear').value = d.grad_year;
+          if (d.cgpa) document.getElementById('fCgpa').value = d.cgpa;
+          if (d.exp_title) document.getElementById('fExpTitle').value = d.exp_title;
+          if (d.exp_company) document.getElementById('fExpCompany').value = d.exp_company;
+          if (d.exp_duration) document.getElementById('fExpDuration').value = d.exp_duration;
 
-          const setVal = (id, val) => {
-            const el = document.getElementById(id);
-            if (el && val !== undefined && val !== null) {
-              el.value = val;
-            }
-          };
-
-          setVal('fName', d.name);
-          setVal('fEmail', d.email);
-          setVal('fPhone', d.phone);
-          setVal('fLocation', d.location);
-          setVal('fLinks', d.links);
-          setVal('fRole', d.role);
-          setVal('fSkills', d.skills);
-          setVal('fDegree', d.degree);
-          setVal('fCollege', d.college);
-          setVal('fGradYear', d.grad_year);
-          setVal('fCgpa', d.cgpa);
-
-          setVal('fExpTitle', d.exp_title);
-          setVal('fExpCompany', d.exp_company);
-          setVal('fExpDuration', d.exp_duration);
           if (d.exp_bullets && Array.isArray(d.exp_bullets)) {
-            setVal('fExpBullets', d.exp_bullets.join('\n'));
+            document.getElementById('fExpBullets').value = d.exp_bullets.join('\n');
           }
-
-          setVal('fProjTitle', d.proj_title);
+          if (d.proj_title) document.getElementById('fProjTitle').value = d.proj_title;
           if (d.proj_bullets && Array.isArray(d.proj_bullets)) {
-            setVal('fProjBullets', d.proj_bullets.join('\n'));
+            document.getElementById('fProjBullets').value = d.proj_bullets.join('\n');
           }
 
           updateLiveResume();
-
-          const sumEl = document.getElementById('pvSummary');
-          if (sumEl && d.summary) {
-            sumEl.textContent = d.summary;
-          }
         } else {
-          alert(result.error || "AI generation failed.");
+          alert('AI Generation Failed: ' + (result.error || 'Unknown error occurred.'));
         }
       } catch (err) {
-        alert("Network communication error with AI engine: " + err.message);
+        alert('Network Error: ' + err.message);
       } finally {
+        btn.innerHTML = originalText;
         btn.disabled = false;
-        btn.innerHTML = originalContent;
-      }
-    }
-
-    function updateLiveResume() {
-      const getVal = (id, fallback = "") => {
-        const el = document.getElementById(id);
-        return el ? el.value.trim() : fallback;
-      };
-
-      const setTxt = (id, txt) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = txt;
-      };
-
-      const name = getVal('fName', "JOHN DOE") || "JOHN DOE";
-      const email = getVal('fEmail', "johndoe@email.com");
-      const phone = getVal('fPhone', "+1 (555) 019-2834");
-      const location = getVal('fLocation', "New York, NY");
-      const links = getVal('fLinks', "linkedin.com/in/johndoe • github.com/johndoe");
-      const role = getVal('fRole', "Software Engineer") || "Software Engineer";
-
-      setTxt('pvName', name.toUpperCase());
-      setTxt('pvContact', `${location} • ${email} • ${phone} • ${links}`);
-      setTxt('pvSummary', `Results-driven ${role} graduate specializing in scalable backend architectures, clean code implementation, and production pipelines. Proficient in delivering verified ATS-compliant deliverables and collaborative systems development.`);
-
-      const skills = getVal('fSkills');
-      const pvSkills = document.getElementById('pvSkills');
-      if (pvSkills) pvSkills.innerHTML = `<p>${skills}</p>`;
-
-      setTxt('pvDegree', getVal('fDegree'));
-      setTxt('pvCollege', getVal('fCollege'));
-      setTxt('pvGradYear', getVal('fGradYear'));
-      setTxt('pvCgpa', getVal('fCgpa'));
-
-      setTxt('pvExpRole', getVal('fExpTitle'));
-      setTxt('pvExpDates', getVal('fExpDuration'));
-      setTxt('pvExpComp', getVal('fExpCompany'));
-      
-      const expBullets = getVal('fExpBullets').split('\n').filter(b => b.trim());
-      const pvExpList = document.getElementById('pvExpList');
-      if (pvExpList) {
-        pvExpList.innerHTML = expBullets.map(b => `<li>${b.trim()}</li>`).join('');
-      }
-
-      setTxt('pvProjTitle', getVal('fProjTitle'));
-      const projBullets = getVal('fProjBullets').split('\n').filter(b => b.trim());
-      const pvProjList = document.getElementById('pvProjList');
-      if (pvProjList) {
-        pvProjList.innerHTML = projBullets.map(b => `<li>${b.trim()}</li>`).join('');
       }
     }
 
     async function downloadAsPdf() {
-      updateLiveResume();
       const btn = document.getElementById('btnDownloadPdf');
-      const originalText = btn ? btn.innerHTML : "Download PDF";
-      if (btn) {
-        btn.innerHTML = "⏳ Generating...";
-        btn.disabled = true;
-      }
-
-      const getVal = (id, fallback = "") => {
-        const el = document.getElementById(id);
-        return el ? el.value.trim() : fallback;
-      };
+      btn.innerText = 'Generating PDF...';
+      btn.disabled = true;
 
       const payload = {
         template: activePattern,
-        candidate_name: getVal('fName', "Candidate") || "Candidate",
-        email: getVal('fEmail'),
-        phone: getVal('fPhone'),
-        location: getVal('fLocation'),
-        links: getVal('fLinks'),
-        role: getVal('fRole'),
-        degree: getVal('fDegree'),
-        college: getVal('fCollege'),
-        grad_year: getVal('fGradYear'),
-        cgpa: getVal('fCgpa'),
-        skills: getVal('fSkills'),
-        exp_title: getVal('fExpTitle'),
-        exp_duration: getVal('fExpDuration'),
-        exp_company: getVal('fExpCompany'),
-        exp_bullets: getVal('fExpBullets').split('\n').filter(b => b.trim()),
-        proj_title: getVal('fProjTitle'),
-        proj_bullets: getVal('fProjBullets').split('\n').filter(b => b.trim())
+        candidate_name: document.getElementById('fName').value,
+        email: document.getElementById('fEmail').value,
+        phone: document.getElementById('fPhone').value,
+        location: document.getElementById('fLocation').value,
+        links: document.getElementById('fLinks').value,
+        role: document.getElementById('fRole').value,
+        summary: document.getElementById('fSummary').value,
+        degree: document.getElementById('fDegree').value,
+        college: document.getElementById('fCollege').value,
+        grad_year: document.getElementById('fGradYear').value,
+        cgpa: document.getElementById('fCgpa').value,
+        skills: document.getElementById('fSkills').value,
+        certifications: document.getElementById('fCerts').value,
+        exp_title: document.getElementById('fExpTitle').value,
+        exp_company: document.getElementById('fExpCompany').value,
+        exp_duration: document.getElementById('fExpDuration').value,
+        exp_bullets: document.getElementById('fExpBullets').value.split('\n').filter(b => b.trim()),
+        proj_title: document.getElementById('fProjTitle').value,
+        proj_bullets: document.getElementById('fProjBullets').value.split('\n').filter(b => b.trim())
       };
 
       try {
-        const res = await fetch('/api/download-resume-pdf', {
+        const response = await fetch('/api/download-resume-pdf', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
-        if (res.ok) {
-          const blob = await res.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${payload.candidate_name.replace(/\s+/g, '_')}_Actual_ATS_Resume.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          a.remove();
-        } else {
-          alert("Server error generating PDF. Please ensure server is running.");
-        }
+        if (!response.ok) throw new Error('PDF Generation failed on server');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${(payload.candidate_name || 'Resume').replace(/\s+/g, '_')}_ATS_Resume.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
       } catch (err) {
-        alert("Network error: " + err.message);
+        alert('Error downloading PDF: ' + err.message);
       } finally {
-        if (btn) {
-          btn.innerHTML = originalText;
-          btn.disabled = false;
-        }
+        btn.innerText = '📄 Download PDF';
+        btn.disabled = false;
       }
     }
 
     function downloadAsDoc() {
-      updateLiveResume();
-      const element = document.getElementById('resumePaper');
-      const fNameEl = document.getElementById('fName');
-      const candName = ((fNameEl ? fNameEl.value : null) || 'Candidate').replace(/\s+/g, '_');
-      const content = `
-        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-        <head><title>Resume</title><style>body{font-family:'Times New Roman',serif; font-size:11pt; line-height:1.35;}</style></head>
-        <body>${element ? element.innerHTML : ""}</body>
-        </html>
-      `;
+      const content = document.getElementById('resumePaper').innerText;
       const blob = new Blob([content], { type: 'application/msword' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${candName}_Actual_ATS_Resume.doc`;
+      a.download = `${(document.getElementById('fName').value || 'Candidate').replace(/\s+/g, '_')}_ATS_Resume.doc`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      a.remove();
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateLiveResume();
+    });
   </script>
 </body>
 </html>
