@@ -50,45 +50,55 @@
   <!-- Toast Notification Floating Container -->
   <div id="toastContainer" class="fixed top-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- Top Navigation Bar -->
+  <!-- Top Navigation Bar (Fixed Overlap & Text Break) -->
   <nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-      <a href="#home" class="flex items-center space-x-2 sm:space-x-3 cursor-pointer">
-        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-500/30">⚡</div>
-        <span class="font-extrabold text-xl tracking-tight text-slate-900">SkillSync<span class="text-blue-600">.ai</span></span>
-      </a>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
       
-      <div class="hidden lg:flex items-center space-x-8 text-sm font-semibold text-slate-600">
-        <a href="#analyzer" class="hover:text-blue-600 transition">Resume Analyzer</a>
-        <a href="/builder" class="hover:text-purple-600 transition flex items-center gap-1.5 font-bold">
+      <!-- Brand Logo & Badge -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <a href="#home" class="flex items-center space-x-2 sm:space-x-3 cursor-pointer shrink-0">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-500/30 shrink-0">⚡</div>
+          <span class="font-extrabold text-xl tracking-tight text-slate-900 whitespace-nowrap">SkillSync<span class="text-blue-600">.ai</span></span>
+        </a>
+        <span class="text-[11px] font-semibold px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full whitespace-nowrap hidden sm:inline-block">
+          Resume Analyzer
+        </span>
+      </div>
+      
+      <!-- Center Links -->
+      <div class="hidden lg:flex items-center space-x-8 text-sm font-semibold text-slate-600 shrink-0">
+        <a href="#analyzer" class="hover:text-blue-600 transition whitespace-nowrap">Resume Analyzer</a>
+        <a href="/builder" class="hover:text-purple-600 transition flex items-center gap-1.5 font-bold whitespace-nowrap">
           <span>✨</span> AI Resume Studio
         </a>
-        <a href="#features" class="hover:text-blue-600 transition">Platform Features</a>
-        <a href="#workflow" class="hover:text-blue-600 transition">How It Works</a>
-        <a href="#about" class="hover:text-blue-600 transition">NLP Architecture</a>
+        <a href="#features" class="hover:text-blue-600 transition whitespace-nowrap">Platform Features</a>
+        <a href="#workflow" class="hover:text-blue-600 transition whitespace-nowrap">How It Works</a>
+        <a href="#about" class="hover:text-blue-600 transition whitespace-nowrap">NLP Architecture</a>
       </div>
 
-      <!-- Auth Controls -->
-      <div class="flex items-center gap-2 sm:gap-3">
-        <div id="guestNav" class="flex items-center gap-2">
-          <button onclick="openAuthModal('login')" class="text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 px-3 py-2 transition">
+      <!-- Auth Controls (Unbreakable buttons) -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div id="guestNav" class="flex items-center gap-2 shrink-0">
+          <button onclick="openAuthModal('login')" class="text-xs sm:text-sm font-semibold text-slate-700 hover:text-blue-600 px-3 py-2 transition whitespace-nowrap shrink-0">
             Sign In
           </button>
-          <button onclick="openAuthModal('register')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition">
+          <button onclick="openAuthModal('register')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl shadow-sm transition whitespace-nowrap shrink-0">
             Create Account
           </button>
         </div>
 
-        <div id="userNav" class="hidden flex items-center gap-2 sm:gap-3">
-          <button onclick="openHistoryModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 flex items-center gap-1.5 transition">
-            <span>📜</span> My History (<span id="userScanCount" class="text-blue-600 font-bold">0</span>)
+        <div id="userNav" class="hidden flex items-center gap-2 sm:gap-3 shrink-0">
+          <button onclick="openHistoryModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 flex items-center gap-1.5 transition whitespace-nowrap shrink-0">
+            <span>📜</span>
+            <span class="whitespace-nowrap">My History (<span id="userScanCount" class="text-blue-600 font-bold">0</span>)</span>
           </button>
-          <span id="userEmailBadge" class="hidden sm:inline-block text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200"></span>
-          <button onclick="handleLogout()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1.5 transition">
+          <span id="userEmailBadge" class="hidden sm:inline-block text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 whitespace-nowrap max-w-[170px] truncate shrink-0"></span>
+          <button onclick="handleLogout()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-2 py-1.5 transition whitespace-nowrap shrink-0">
             Logout
           </button>
         </div>
       </div>
+
     </div>
   </nav>
 
@@ -428,7 +438,7 @@
     </div>
   </section>
 
-  <!-- Footer with Live GitHub Repo Link (Exact Original Maintained) -->
+  <!-- Footer with Live GitHub Repo Link -->
   <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 mt-auto text-xs">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center space-x-2">
@@ -621,7 +631,7 @@
         }
       }
 
-      let base = (filename || 'Candidate').replace(/\.[^/.]+$/, '');
+      let base = (filename || 'Candidate').replace(/\.[^/.]+\$/, '');
       base = base.replace(/\(\d+\)/g, '');
       let segments = base.split(/[-_]/);
       let namePart = segments[0].trim();
@@ -1195,7 +1205,6 @@
         return;
       }
 
-      // Loader Activate & Previous Results Hide
       submitBtn.disabled = true;
       submitBtn.innerHTML = `
         <span class="inline-flex items-center gap-2">
@@ -1240,7 +1249,7 @@
                 const cleanName = getCleanCandidateName(res.candidate_name, res.filename);
                 return `
                   <tr onclick="renderCandidateDetails(${idx})" class="cursor-pointer hover:bg-blue-50/50 transition-colors ${idx === 0 ? 'bg-blue-100/70 ring-1 ring-blue-400 font-semibold' : ''}">
-                    <td class="p-3 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#${idx+1}`))}</td>
+                    <td class="p-3 font-bold">${idx === 0 ? '🥇 #1' : (idx === 1 ? '🥈 #2' : (idx === 2 ? '🥉 #3' : `#\${idx+1}`))}</td>
                     <td class="p-3 font-bold text-slate-900">${cleanName}</td>
                     <td class="p-3 font-medium text-slate-600 truncate max-w-[200px]">${res.filename}</td>
                     <td class="p-3 text-center">${getBadgeHTML(res.status)}</td>
@@ -1260,7 +1269,6 @@
           renderCandidateDetails(0);
           checkAuthStatus();
 
-          // Loader Hide & Show Results
           loadingPanel.classList.add('hidden');
           resultsCard.classList.remove('hidden');
           resultsCard.scrollIntoView({ behavior: 'smooth' });
