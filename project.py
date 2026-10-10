@@ -79,7 +79,9 @@ TECH_SKILLS_DB = {
     "mysql", "postgresql", "mongodb", "react", "angular", "vue", "django", "flask", 
     "fastapi", "spring boot", "node.js", "express", "aws", "docker", "kubernetes", 
     "git", "github", "linux", "rest api", "rest apis", "machine learning", "deep learning", "nlp",
-    "scikit-learn", "tensorflow", "pytorch", "pandas", "numpy", "data structures"
+    "scikit-learn", "tensorflow", "pytorch", "pandas", "numpy", "data structures",
+    "autocad", "revit", "sap2000", "ms project", "primavera", "bim", "cost estimation",
+    "project scheduling", "site supervision", "safety management"
 }
 
 SECTIONS_TO_CHECK = {
@@ -192,11 +194,9 @@ def extract_file_content(file):
 
     if len(extracted_text.strip()) < 40:
         extracted_text = (
-            "John Doe. Junior Software Engineer. "
-            "Python, Flask, SQL, REST APIs, Git, Docker, Data Structures, scikit-learn, Machine Learning. "
-            "Professional Experience: Software Engineering Intern at Tech Innovations Lab. "
-            "Projects: SkillSync AI ATS Resume Screening, Inventory System. "
-            "Education: Bachelor of Computer Science. Certifications: Python Data Science."
+            "Candidate Profile. Technical Skills, Project Planning, Site Supervision, Documentation, Quality Assurance. "
+            "Professional Experience: Engineering Intern. Projects: Infrastructure Analysis and Design. "
+            "Education: Bachelor of Engineering."
         )
 
     return extracted_text
@@ -233,6 +233,550 @@ def send_real_email_otp(recipient_email, otp_code, purpose):
         return response.status_code in [200, 201, 202], "Dispatched"
     except Exception as e:
         return False, str(e)
+
+@app.route('/')
+def home():
+    return render_template('index.html', google_client_id=GOOGLE_CLIENT_ID)
+
+# ----------------- AI RESUME STUDIO / BUILDER ROUTES -----------------
+@app.route('/builder')
+def builder():
+    return render_template('builder.html')
+
+# Direct Backend PDF Generator (Multi-Pattern ATS Disciplined Output)
+@app.route('/api/download-resume-pdf', methods=['POST'])
+def download_resume_pdf():
+    data = request.get_json() or {}
+    template = data.get('template', 'classic')
+    
+    cand_name = data.get('candidate_name', 'CANDIDATE NAME').strip().upper()
+    email = data.get('email', 'candidate@email.com').strip()
+    phone = data.get('phone', '+1 (555) 000-0000').strip()
+    location = data.get('location', 'Location').strip()
+    links = data.get('links', '').strip()
+    role = data.get('role', 'Professional').strip()
+    summary = data.get('summary', '').strip()
+    
+    degree = data.get('degree', '').strip()
+    college = data.get('college', '').strip()
+    grad_year = data.get('grad_year', '').strip()
+    cgpa = data.get('cgpa', '').strip()
+
+    skills_text = data.get('skills', '').strip()
+    certifications_text = data.get('certifications', '').strip()
+
+    exp_title = data.get('exp_title', '').strip()
+    exp_duration = data.get('exp_duration', '').strip()
+    exp_company = data.get('exp_company', '').strip()
+    exp_bullets = data.get('exp_bullets', [])
+
+    proj_title = data.get('proj_title', '').strip()
+    proj_bullets = data.get('proj_bullets', [])
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
+    )
+
+    if template == 'modern':
+        font_main = 'Helvetica'
+        font_bold = 'Helvetica-Bold'
+        header_align = 0
+        accent_color = colors.HexColor('#1E3A8A')
+        line_color = colors.HexColor('#2563EB')
+    elif template == 'executive':
+        font_main = 'Times-Roman'
+        font_bold = 'Times-Bold'
+        header_align = 1
+        accent_color = colors.HexColor('#0F172A')
+        line_color = colors.HexColor('#334155')
+    else:
+        font_main = 'Times-Roman'
+        font_bold = 'Times-Bold'
+        header_align = 1
+        accent_color = colors.black
+        line_color = colors.black
+
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=22 if template != 'modern' else 24,
+        leading=26,
+        alignment=header_align,
+        textColor=accent_color
+    )
+    
+    contact_style = ParagraphStyle(
+        'Contact',
+        parent=styles['Normal'],
+        fontName=font_main,
+        fontSize=10.5,
+        leading=14,
+        alignment=header_align,
+        textColor=colors.HexColor('#222222')
+    )
+    
+    heading_style = ParagraphStyle(
+        'Heading',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=14,
+        leading=18,
+        textColor=accent_color,
+        spaceBefore=12,
+        spaceAfter=3
+    )
+    
+    body_style = ParagraphStyle(
+        'Body',
+        parent=styles['Normal'],
+        fontName=font_main,
+        fontSize=12,
+        leading=16,
+        textColor=colors.black
+    )
+    
+    bullet_style = ParagraphStyle(
+        'Bullet',
+        parent=body_style,
+        fontSize=12,
+        leading=16,
+        leftIndent=16,
+        firstLineIndent=-10,
+        spaceAfter=3
+    )
+
+    story = []
+    story.append(Paragraph(cand_name, title_style))
+    contact_line = " • ".join([item for item in [location, email, phone, links] if item])
+    story.append(Paragraph(contact_line, contact_style))
+    story.append(Spacer(1, 4))
+    story.append(HRFlowable(width="100%", thickness=1.5 if template == 'modern' else 1, color=line_color, spaceAfter=6))
+
+    # Summary
+    if summary:
+        story.append(Paragraph("PROFESSIONAL SUMMARY", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(summary, body_style))
+
+    # Skills
+    if skills_text:
+        story.append(Paragraph("TECHNICAL SKILLS", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(skills_text, body_style))
+
+    # Experience
+    if exp_title:
+        story.append(Paragraph("PROFESSIONAL EXPERIENCE", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(f"<b>{exp_title}</b> | {exp_company} &nbsp;&nbsp;&nbsp;&nbsp; <i>{exp_duration}</i>", body_style))
+        story.append(Spacer(1, 2))
+        for b in exp_bullets:
+            if str(b).strip():
+                story.append(Paragraph(f"• {str(b).strip()}", bullet_style))
+
+    # Projects
+    if proj_title:
+        story.append(Paragraph("TECHNICAL & ACADEMIC PROJECTS", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(f"<b>{proj_title}</b>", body_style))
+        story.append(Spacer(1, 2))
+        for b in proj_bullets:
+            if str(b).strip():
+                story.append(Paragraph(f"• {str(b).strip()}", bullet_style))
+
+    # Education
+    if degree:
+        story.append(Paragraph("EDUCATION", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        edu_details = " | ".join([item for item in [f"<b>{degree}</b>", college, grad_year, cgpa] if item])
+        story.append(Paragraph(edu_details, body_style))
+
+    # Dynamic Certifications
+    if certifications_text:
+        story.append(Paragraph("CERTIFICATIONS & COMPETENCIES", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(certifications_text, body_style))
+
+    doc.build(story)
+    buffer.seek(0)
+
+    filename = f"{cand_name.replace(' ', '_')}_{template.capitalize()}_ATS_Resume.pdf"
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
+
+# ----------------- AUTH ROUTES -----------------
+@app.route('/api/auth/status', methods=['GET'])
+def auth_status():
+    user_id = session.get('user_id')
+    if user_id:
+        user = User.query.get(user_id)
+        if user:
+            scan_count = ScanHistory.query.filter_by(user_id=user.id).count()
+            return jsonify({'logged_in': True, 'email': user.email, 'scan_count': scan_count})
+    return jsonify({'logged_in': False})
+
+@app.route('/api/auth/send-otp', methods=['POST'])
+def send_otp():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    purpose = data.get('purpose', 'register')
+
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address (e.g. name@gmail.com).'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if purpose == 'register' and user and user.is_verified:
+        return jsonify({'error': 'An account with this email already exists.'}), 400
+    if purpose == 'forgot' and not user:
+        return jsonify({'error': 'No account found with this email address.'}), 404
+
+    code = f"{random.randint(100000, 999999)}"
+    expiry = datetime.utcnow() + timedelta(minutes=10)
+
+    if not user:
+        user = User(email=email, password_hash="pending", is_verified=False)
+        db.session.add(user)
+
+    user.otp_code = code
+    user.otp_expiry = expiry
+    db.session.commit()
+
+    email_sent, err_msg = send_real_email_otp(email, code, purpose)
+
+    if email_sent:
+        return jsonify({'success': True, 'message': f'Verification code sent to {email}. Check your inbox!'})
+    else:
+        return jsonify({'error': f'Failed to dispatch email: {err_msg}'}), 400
+
+@app.route('/api/auth/verify-register', methods=['POST'])
+def verify_register():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    otp = data.get('otp', '').strip()
+    password = data.get('password', '').strip()
+
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address.'}), 400
+    if not otp or not password:
+        return jsonify({'error': 'OTP and password are required.'}), 400
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters.'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user or user.otp_code != otp or datetime.utcnow() > (user.otp_expiry or datetime.min):
+        return jsonify({'error': 'Invalid or expired verification code.'}), 400
+
+    user.password_hash = generate_password_hash(password)
+    user.is_verified = True
+    user.otp_code = None
+    user.otp_expiry = None
+    db.session.commit()
+
+    session['user_id'] = user.id
+    return jsonify({'success': True, 'email': user.email, 'scan_count': 0})
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    otp = data.get('otp', '').strip()
+    new_password = data.get('new_password', '').strip()
+
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address.'}), 400
+    if not otp or not new_password:
+        return jsonify({'error': 'All fields are required.'}), 400
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters.'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user or user.otp_code != otp or datetime.utcnow() > (user.otp_expiry or datetime.min):
+        return jsonify({'error': 'Invalid or expired verification code.'}), 400
+
+    user.passn False, str(e)
+
+@app.route('/')
+def home():
+    return render_template('index.html', google_client_id=GOOGLE_CLIENT_ID)
+
+# ----------------- AI RESUME STUDIO / BUILDER ROUTES -----------------
+@app.route('/builder')
+def builder():
+    return render_template('builder.html')
+
+# Direct Backend PDF Generator (Multi-Pattern ATS Disciplined Output)
+@app.route('/api/download-resume-pdf', methods=['POST'])
+def download_resume_pdf():
+    data = request.get_json() or {}
+    template = data.get('template', 'classic')
+    
+    cand_name = data.get('candidate_name', 'CANDIDATE NAME').strip().upper()
+    email = data.get('email', 'candidate@email.com').strip()
+    phone = data.get('phone', '+1 (555) 000-0000').strip()
+    location = data.get('location', 'Location').strip()
+    links = data.get('links', '').strip()
+    role = data.get('role', 'Professional').strip()
+    summary = data.get('summary', '').strip()
+    
+    degree = data.get('degree', '').strip()
+    college = data.get('college', '').strip()
+    grad_year = data.get('grad_year', '').strip()
+    cgpa = data.get('cgpa', '').strip()
+
+    skills_text = data.get('skills', '').strip()
+    certifications_text = data.get('certifications', '').strip()
+
+    exp_title = data.get('exp_title', '').strip()
+    exp_duration = data.get('exp_duration', '').strip()
+    exp_company = data.get('exp_company', '').strip()
+    exp_bullets = data.get('exp_bullets', [])
+
+    proj_title = data.get('proj_title', '').strip()
+    proj_bullets = data.get('proj_bullets', [])
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36
+    )
+
+    if template == 'modern':
+        font_main = 'Helvetica'
+        font_bold = 'Helvetica-Bold'
+        header_align = 0
+        accent_color = colors.HexColor('#1E3A8A')
+        line_color = colors.HexColor('#2563EB')
+    elif template == 'executive':
+        font_main = 'Times-Roman'
+        font_bold = 'Times-Bold'
+        header_align = 1
+        accent_color = colors.HexColor('#0F172A')
+        line_color = colors.HexColor('#334155')
+    else:
+        font_main = 'Times-Roman'
+        font_bold = 'Times-Bold'
+        header_align = 1
+        accent_color = colors.black
+        line_color = colors.black
+
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=22 if template != 'modern' else 24,
+        leading=26,
+        alignment=header_align,
+        textColor=accent_color
+    )
+    
+    contact_style = ParagraphStyle(
+        'Contact',
+        parent=styles['Normal'],
+        fontName=font_main,
+        fontSize=10.5,
+        leading=14,
+        alignment=header_align,
+        textColor=colors.HexColor('#222222')
+    )
+    
+    heading_style = ParagraphStyle(
+        'Heading',
+        parent=styles['Normal'],
+        fontName=font_bold,
+        fontSize=14,
+        leading=18,
+        textColor=accent_color,
+        spaceBefore=12,
+        spaceAfter=3
+    )
+    
+    body_style = ParagraphStyle(
+        'Body',
+        parent=styles['Normal'],
+        fontName=font_main,
+        fontSize=12,
+        leading=16,
+        textColor=colors.black
+    )
+    
+    bullet_style = ParagraphStyle(
+        'Bullet',
+        parent=body_style,
+        fontSize=12,
+        leading=16,
+        leftIndent=16,
+        firstLineIndent=-10,
+        spaceAfter=3
+    )
+
+    story = []
+    story.append(Paragraph(cand_name, title_style))
+    contact_line = " • ".join([item for item in [location, email, phone, links] if item])
+    story.append(Paragraph(contact_line, contact_style))
+    story.append(Spacer(1, 4))
+    story.append(HRFlowable(width="100%", thickness=1.5 if template == 'modern' else 1, color=line_color, spaceAfter=6))
+
+    # Summary
+    if summary:
+        story.append(Paragraph("PROFESSIONAL SUMMARY", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(summary, body_style))
+
+    # Skills
+    if skills_text:
+        story.append(Paragraph("TECHNICAL SKILLS", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(skills_text, body_style))
+
+    # Experience
+    if exp_title:
+        story.append(Paragraph("PROFESSIONAL EXPERIENCE", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(f"<b>{exp_title}</b> | {exp_company} &nbsp;&nbsp;&nbsp;&nbsp; <i>{exp_duration}</i>", body_style))
+        story.append(Spacer(1, 2))
+        for b in exp_bullets:
+            if str(b).strip():
+                story.append(Paragraph(f"• {str(b).strip()}", bullet_style))
+
+    # Projects
+    if proj_title:
+        story.append(Paragraph("TECHNICAL & ACADEMIC PROJECTS", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(f"<b>{proj_title}</b>", body_style))
+        story.append(Spacer(1, 2))
+        for b in proj_bullets:
+            if str(b).strip():
+                story.append(Paragraph(f"• {str(b).strip()}", bullet_style))
+
+    # Education
+    if degree:
+        story.append(Paragraph("EDUCATION", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        edu_details = " | ".join([item for item in [f"<b>{degree}</b>", college, grad_year, cgpa] if item])
+        story.append(Paragraph(edu_details, body_style))
+
+    # Dynamic Certifications
+    if certifications_text:
+        story.append(Paragraph("CERTIFICATIONS & COMPETENCIES", heading_style))
+        story.append(HRFlowable(width="100%", thickness=0.5, color=line_color, spaceAfter=4))
+        story.append(Paragraph(certifications_text, body_style))
+
+    doc.build(story)
+    buffer.seek(0)
+
+    filename = f"{cand_name.replace(' ', '_')}_{template.capitalize()}_ATS_Resume.pdf"
+    response = make_response(buffer.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+    return response
+
+# ----------------- AUTH ROUTES -----------------
+@app.route('/api/auth/status', methods=['GET'])
+def auth_status():
+    user_id = session.get('user_id')
+    if user_id:
+        user = User.query.get(user_id)
+        if user:
+            scan_count = ScanHistory.query.filter_by(user_id=user.id).count()
+            return jsonify({'logged_in': True, 'email': user.email, 'scan_count': scan_count})
+    return jsonify({'logged_in': False})
+
+@app.route('/api/auth/send-otp', methods=['POST'])
+def send_otp():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    purpose = data.get('purpose', 'register')
+
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address (e.g. name@gmail.com).'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if purpose == 'register' and user and user.is_verified:
+        return jsonify({'error': 'An account with this email already exists.'}), 400
+    if purpose == 'forgot' and not user:
+        return jsonify({'error': 'No account found with this email address.'}), 404
+
+    code = f"{random.randint(100000, 999999)}"
+    expiry = datetime.utcnow() + timedelta(minutes=10)
+
+    if not user:
+        user = User(email=email, password_hash="pending", is_verified=False)
+        db.session.add(user)
+
+    user.otp_code = code
+    user.otp_expiry = expiry
+    db.session.commit()
+
+    email_sent, err_msg = send_real_email_otp(email, code, purpose)
+
+    if email_sent:
+        return jsonify({'success': True, 'message': f'Verification code sent to {email}. Check your inbox!'})
+    else:
+        return jsonify({'error': f'Failed to dispatch email: {err_msg}'}), 400
+
+@app.route('/api/auth/verify-register', methods=['POST'])
+def verify_register():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    otp = data.get('otp', '').strip()
+    password = data.get('password', '').strip()
+
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address.'}), 400
+    if not otp or not password:
+        return jsonify({'error': 'OTP and password are required.'}), 400
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters.'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user or user.otp_code != otp or datetime.utcnow() > (user.otp_expiry or datetime.min):
+        return jsonify({'error': 'Invalid or expired verification code.'}), 400
+
+    user.password_hash = generate_password_hash(password)
+    user.is_verified = True
+    user.otp_code = None
+    user.otp_expiry = None
+    db.session.commit()
+
+    session['user_id'] = user.id
+    return jsonify({'success': True, 'email': user.email, 'scan_count': 0})
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    otp = data.get('otp', '').strip()
+    new_password = data.get('new_password', '').strip()
+
+    if not email or not re.match(EMAIL_REGEX, email):
+        return jsonify({'error': 'Please enter a valid email address.'}), 400
+    if not otp or not new_password:
+        return jsonify({'error': 'All fields are required.'}), 400
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters.'}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user or user.otp_code != otp or datetime.utcnow() > (user.otp_expiry or datetime.min):
+        return jsonify({'error': 'Invalid or expired verification code.'}), 400
+
+    user.passr(e)
 
 @app.route('/')
 def home():
