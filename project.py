@@ -9,6 +9,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import re
 import os
 import io
+import json
 import time
 import random
 import requests
@@ -22,11 +23,11 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
-# Google GenAI Imports
-import os
+# Groq Client Imports
 from groq import Groq
 
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "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")
+# Read purely from Environment (No hardcoded keys to prevent GitHub Auto-Revocation)
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 
 app = Flask(__name__)
@@ -44,7 +45,7 @@ SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "huzaifayhchannel@gmail.com")
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "")
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "1063711450384-jqhqdt2igs7eldt2ldsms9ug55skrj4g.apps.googleusercontent.com")
 
-EMAIL_REGEX = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}\$'
+EMAIL_REGEX = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$'
 
 db = SQLAlchemy(app)
 
@@ -126,7 +127,7 @@ def extract_candidate_name(raw_text, filename):
                 continue
             return " ".join(clean_tokens).title()
 
-    clean_fn = re.sub(r'\.[^/.]+\$', '', filename)
+    clean_fn = re.sub(r'\.[^/.]+$', '', filename)
     clean_fn = re.sub(r'\(\d+\)', '', clean_fn)
     fn_first_part = re.split(r'[-_]', clean_fn)[0].strip()
     fn_tokens = [w for w in fn_first_part.split() if w.lower() not in DISQUALIFIERS and not re.search(r'\d', w)]
@@ -309,7 +310,6 @@ def download_resume_pdf():
 
     styles = getSampleStyleSheet()
     
-    # Sabse upar Name (22pt Bold)
     title_style = ParagraphStyle(
         'Title',
         parent=styles['Normal'],
@@ -320,7 +320,6 @@ def download_resume_pdf():
         textColor=accent_color
     )
     
-    # Sub-header contact info
     contact_style = ParagraphStyle(
         'Contact',
         parent=styles['Normal'],
@@ -331,7 +330,6 @@ def download_resume_pdf():
         textColor=colors.HexColor('#222222')
     )
     
-    # Headlines (Technical Skills, Projects, etc. - Bold 14pt)
     heading_style = ParagraphStyle(
         'Heading',
         parent=styles['Normal'],
@@ -343,7 +341,6 @@ def download_resume_pdf():
         spaceAfter=3
     )
     
-    # Normal Info / Body text (12pt)
     body_style = ParagraphStyle(
         'Body',
         parent=styles['Normal'],
@@ -353,7 +350,6 @@ def download_resume_pdf():
         textColor=colors.black
     )
     
-    # Bullet points (12pt)
     bullet_style = ParagraphStyle(
         'Bullet',
         parent=body_style,
@@ -720,8 +716,12 @@ def ai_generate_resume():
     if not user_instruction:
         return jsonify({'error': 'Please provide instructions for the AI.'}), 400
 
-    if not groq_client:
-        return jsonify({'error': 'GROQ_API_KEY is not configured on the server.'}), 500
+    # Ensure client is dynamically ready with current env key
+    current_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if not current_key:
+        return jsonify({'error': 'GROQ_API_KEY is not configured in environment.'}), 500
+
+    active_groq_client = Groq(api_key=current_key)
 
     system_instruction = """
     You are an expert ATS Resume Architect. Based on the user's instructions and background details, construct an ATS-compliant professional resume.
@@ -756,12 +756,12 @@ def ai_generate_resume():
     """
 
     try:
-        chat_completion = groq_client.chat.completions.create(
+        chat_completion = active_groq_client.chat.completions.create(
             messages=[
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": user_instruction}
             ],
-            model="llama-3.3-70b-versatile",
+            model="openai/gpt-oss-120b",
             temperature=0.2,
             response_format={"type": "json_object"}
         )
@@ -770,6 +770,6 @@ def ai_generate_resume():
         return jsonify({'success': True, 'data': parsed_json})
     except Exception as e:
         return jsonify({'error': f'AI Generation Failed: {str(e)}'}), 500
-        
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
