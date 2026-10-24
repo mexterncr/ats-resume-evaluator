@@ -770,7 +770,6 @@ def ai_generate_resume():
         return jsonify({'success': True, 'data': parsed_json})
     except Exception as e:
         return jsonify({'error': f'AI Generation Failed: {str(e)}'}), 500
-
-    
+        
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
