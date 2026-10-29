@@ -552,7 +552,53 @@ Ensured standard compliance with structural design codes and optimized material 
       a.remove();
     }
 
+    // [gap-fix] The analyzer stores {candidate_name, role_name, jd,
+    // missing_skills, missing_sections} in sessionStorage before opening
+    // this page (see navigateToStudio in index.html). Build a ready AI
+    // prompt from it and fill the prompt box, so the user does not have
+    // to retype the gaps. One-time use: the stored data is removed after
+    // reading, so a later direct visit does not show a stale prompt.
+    function prefillGapPrompt() {
+      let gap = null;
+      try {
+        const raw = sessionStorage.getItem('skillsync_gap_data');
+        if (!raw) return;
+        gap = JSON.parse(raw);
+        sessionStorage.removeItem('skillsync_gap_data');
+      } catch (e) {
+        return;
+      }
+      if (!gap) return;
+
+      const name = (gap.candidate_name || '').trim();
+      const role = (gap.role_name || '').replace(/_/g, ' ').trim();
+      const skills = Array.isArray(gap.missing_skills) ? gap.missing_skills : [];
+      const sections = Array.isArray(gap.missing_sections) ? gap.missing_sections : [];
+      const jd = (gap.jd || '').trim();
+
+      const lines = [];
+      let first = 'Create an ATS-optimized resume';
+      if (name) first += ' for ' + name;
+      if (role) first += ' for the ' + role + ' role';
+      lines.push(first + '.');
+      if (skills.length) {
+        lines.push('My current resume was analyzed and these skills were found MISSING - include them naturally in the skills section and in the experience/project points: ' + skills.join(', ') + '.');
+      }
+      if (sections.length) {
+        lines.push('These sections are also missing from my current resume and must be added: ' + sections.join(', ') + '.');
+      }
+      if (jd) {
+        lines.push('Match the keywords and requirements of this target job description:\n' + jd);
+      }
+
+      const box = document.getElementById('aiPromptInput');
+      if (box && lines.length) {
+        box.value = lines.join('\n');
+      }
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
+      prefillGapPrompt();
       updateLiveResume();
     });
   </script>
