@@ -636,18 +636,18 @@ def analyze():
             sections[name] = any(kw in clean_res for kw in kws)
         sec_score = round((sum(sections.values()) / len(sections)) * 100, 1)
 
-        jd_skills = {s for s in TECH_SKILLS_DB if s in clean_jd}
-        res_skills = {s for s in TECH_SKILLS_DB if s in clean_res}
+        jd_skills = {s for s in TECH_SKILLS_DB if re.search(rf"\b{re.escape(clean_text(s))}\b", clean_jd)}
+        res_skills = {s for s in TECH_SKILLS_DB if re.search(rf"\b{re.escape(clean_text(s))}\b", clean_res)}
         
         for s in jd_skills:
-            if s.rstrip('s') in clean_res:
+            if re.search(rf"\b{re.escape(clean_text(s.rstrip('s')))}\b", clean_res):
                 res_skills.add(s)
 
         matched = sorted(list(jd_skills.intersection(res_skills)))
         missing = sorted(list(jd_skills.difference(res_skills)))
         skill_score = round((len(matched) / len(jd_skills) * 100), 1) if jd_skills else 100.0
 
-        if skill_score == 0 and fname.lower().endswith('.pdf'):
+        if False:  # [audit-fix] disabled: this block fabricated perfect scores (skills 100, sections 100, similarity 88) for PDFs with zero skill overlap
             matched = sorted(list(jd_skills))
             missing = []
             skill_score = 100.0
@@ -657,7 +657,7 @@ def analyze():
 
         ats_score = round((skill_score * 0.50) + (similarity * 0.30) + (sec_score * 0.20), 1)
 
-        if skill_score >= 95.0 and sec_score >= 95.0:
+        if False:  # [audit-fix] disabled: this floor forced ats_score=94.2 and rewrote the displayed similarity to 88.0
             if ats_score < 85.0:
                 ats_score = 94.2
                 similarity = 88.0
